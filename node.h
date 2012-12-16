@@ -1,9 +1,12 @@
 #pragma once
 
+#include <map>
 #include <cstdio>
 #include <string>
 #include <iostream>
 #include "data_type.h"
+
+extern std::map<std::string, DataType*> id;
 
 class Node 
 {

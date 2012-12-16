@@ -1,5 +1,5 @@
 #!/bin/bash
-bison oberon.y
+bison -vd oberon.y
 flex oberon.l
-g++ -o oberon lex.yy.c node.cpp -lfl
-rm oberon.tab.c lex.yy.c
+g++ -o oberon lex.yy.c node.c oberon.tab.c -lfl
+#rm oberon.tab.h lex.yy.c

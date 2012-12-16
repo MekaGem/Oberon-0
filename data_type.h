@@ -8,8 +8,8 @@ const int BOOL_TYPE = 2;
 const int FLOAT_TYPE = 3;
 
 const int LAST_NUMERIC_TYPE = FLOAT_TYPE;
-const int MAX_TYPES_NUM = 100;
-std::string typeName[MAX_TYPES_NUM] = {"NO_TYPE", "INTEGER", "BOOLEAN", "FLOAT"};
+const int MAX_TYPES_NUM = 4;
+extern std::string typeName[];
 
 class DataType
 {
@@ -350,5 +350,3 @@ private:
         }   
     }
 };
-
-std::map<std::string, DataType> id;

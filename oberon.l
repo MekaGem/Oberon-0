@@ -1,7 +1,7 @@
 %{
     #include <stdlib.h>
     #include "node.h"
-    #include "oberon.tab.c"
+    #include "oberon.tab.h"
 
     void yyerror(char *);
 %}
