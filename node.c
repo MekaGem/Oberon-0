@@ -342,3 +342,78 @@ DataType Expression::run()
         return expr1->run() >= expr2->run();
     }
 }
+
+
+/** Assignment **/
+
+Assignment::Assignment(Ident* ident, Selector* selector, Expression* expr) {}
+
+void Assignment::print()
+{
+    ident->print();
+    selector->print();
+    std::cout << " := ";
+    expr->print();
+}
+
+DataType Assignment::run()
+{
+    if (selector == NULL)
+    {
+        *(id[ident->name]) = expr->run();
+        return *(id[ident->name]);
+    }
+    else
+    {
+        std::cerr << "Arrays are not ready now!" << std::endl;
+        exit(-1);
+    }
+}
+
+
+/** Statement **/
+
+Statement::Statement(Assignment* assignment) {}
+
+void Statement::print()
+{
+    assignment->print();
+}
+
+DataType Statement::run()
+{
+    assignment->run();
+}
+
+
+/** StatementSequence **/
+
+StatementSequence::StatementSequence(Statement* statement, StatementSequence* statementSequence)
+ : statement(statement), statementSequence(statementSequence) {}
+
+void StatementSequence::print()
+{
+    if (statementSequence == NULL)
+    {
+        statement->print();
+    }
+    else
+    {
+        statementSequence->print();
+        std::cout << " ; ";
+        statement->print();
+    }
+}
+
+DataType StatementSequence::run()
+{
+    if (statementSequence == NULL)
+    {
+        return statement->run();
+    }
+    else
+    {
+        statementSequence->run();
+        return statement->run();
+   }
+}

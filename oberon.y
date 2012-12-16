@@ -17,6 +17,7 @@
     Term* term_node;
     SimpleExpression* simple_expression_node;
     Expression* expression_node;
+    Assignment* assign_node;
     Statement* statement_node;
     StatementSequence* statement_sequence_node;
 };
@@ -30,27 +31,64 @@
 %token GREQ
 %token ASSIGN
 
-%type <selector_node> SELECTOR
-%type <factor_node> FACTOR
-%type <term_node> TERM
-%type <simple_expression_node> SIMPLE_EXPRESSION
-%type <expression_node> EXPRESSION
-%type <assign_node> ASSIGNMENT
-%type <statement_node> STATEMENT
+%left '+'
+%left '-'
+%left '*'
+%left DIV
+%left '&'
+%left OR
+%left '~'
+%left MOD
+%left ';'
+%left '<'
+%left '>'
+%left LSEQ
+%left GREQ
+%left '#'
+%left '='
+%left ASSIGN
+
 %type <statement_sequence_node> STATEMENT_SEQUENCE
+%type <statement_node> STATEMENT
+%type <assign_node> ASSIGNMENT
+%type <expression_node> EXPRESSION
+%type <simple_expression_node> SIMPLE_EXPRESSION
+%type <term_node> TERM
+%type <factor_node> FACTOR
+%type <selector_node> SELECTOR
 
 %%
 
-SELECTOR:
-    '[' EXPRESSION ']' {$$ = new Selector($2)}
-    | {$$ = new Selector();}
+STATEMENT_SEQUENCE:
+    STATEMENT {$$ = new StatementSequence($1);}
+    | STATEMENT_SEQUENCE ';' STATEMENT {$$ = new StatementSequence($3, $1);}
     ;
 
-FACTOR:
-    IDENT SELECTOR {$$ = new Factor(Factor::FACTOR_IDENT, $1, $2);}
-    | NUMBER {$$ = new Factor(Factor::FACTOR_NUMBER, $1);}
-    | '(' EXPRESSION ')' {$$ = new Factor(Factor::FACTOR_EXPR, $2);}
-    | '~' FACTOR {$$ = new Factor(Factor::FACTOR_NOT, $2);}
+STATEMENT:
+    ASSIGNMENT {$$ = new Statement($1);}
+    ;
+
+ASSIGNMENT:
+    IDENT SELECTOR ASSIGN EXPRESSION {$$ = new Assignment($1, $2, $4);}
+    ;
+
+EXPRESSION:
+    SIMPLE_EXPRESSION '=' SIMPLE_EXPRESSION {$$ = new Expression(Expression::EXPRESSION_EQ, $1, $3);}
+    | SIMPLE_EXPRESSION '#' SIMPLE_EXPRESSION {$$ = new Expression(Expression::EXPRESSION_NOTEQ, $1, $3);}
+    | SIMPLE_EXPRESSION LSEQ SIMPLE_EXPRESSION {$$ = new Expression(Expression::EXPRESSION_LSEQ, $1, $3);}
+    | SIMPLE_EXPRESSION '<' SIMPLE_EXPRESSION {$$ = new Expression(Expression::EXPRESSION_LS, $1, $3);}
+    | SIMPLE_EXPRESSION GREQ SIMPLE_EXPRESSION {$$ = new Expression(Expression::EXPRESSION_GREQ, $1, $3);}
+    | SIMPLE_EXPRESSION '>' SIMPLE_EXPRESSION {$$ = new Expression(Expression::EXPRESSION_GR, $1, $3);}
+    | SIMPLE_EXPRESSION {$$ = new Expression(Expression::EXPRESSION_SIMPLE, $1);}
+    ;
+
+SIMPLE_EXPRESSION:
+    TERM {$$ = new SimpleExpression(SimpleExpression::SIMPLE_EXPRESSION_LPLUS, $1);}
+    | '+' TERM {$$ = new SimpleExpression(SimpleExpression::SIMPLE_EXPRESSION_LPLUS, $2);}
+    | '-' TERM {$$ = new SimpleExpression(SimpleExpression::SIMPLE_EXPRESSION_LMINUS, $2);}
+    | SIMPLE_EXPRESSION '+' TERM {$$ = new SimpleExpression(SimpleExpression::SIMPLE_EXPRESSION_PLUS, $3, $1);}
+    | SIMPLE_EXPRESSION '-' TERM {$$ = new SimpleExpression(SimpleExpression::SIMPLE_EXPRESSION_MINUS, $3, $1);}
+    | SIMPLE_EXPRESSION OR TERM {$$ = new SimpleExpression(SimpleExpression::SIMPLE_EXPRESSION_OR, $3, $1);}
     ;
 
 TERM: 
@@ -61,53 +99,19 @@ TERM:
     | TERM '&' FACTOR {$$ = new Term(Term::TERM_AND, $3, $1);}
     ;
 
-SIMPLE_EXPRESSION:
-    '+' TERM {$$ = new SimpleExpression(SimpleExpression::SIMPLE_EXPRESSION_LPLUS, $2);}
-    | '-' TERM {$$ = new SimpleExpression(SimpleExpression::SIMPLE_EXPRESSION_LMINUS, $2);}
-    | SIMPLE_EXPRESSION '+' TERM {$$ = new SimpleExpression(SimpleExpression::SIMPLE_EXPRESSION_PLUS, $3, $1);}
-    | SIMPLE_EXPRESSION '-' TERM {$$ = new SimpleExpression(SimpleExpression::SIMPLE_EXPRESSION_MINUS, $3, $1);}
-    | SIMPLE_EXPRESSION OR TERM {$$ = new SimpleExpression(SimpleExpression::SIMPLE_EXPRESSION_OR, $3, $1);}
+FACTOR:
+    IDENT SELECTOR {$$ = new Factor(Factor::FACTOR_IDENT, $1, $2);}
+    | NUMBER {$$ = new Factor(Factor::FACTOR_NUMBER, $1);}
+    | '(' EXPRESSION ')' {$$ = new Factor(Factor::FACTOR_EXPR, $2);}
+    | '~' FACTOR {$$ = new Factor(Factor::FACTOR_NOT, $2);}
     ;
 
-EXPRESSION:
-    SIMPLE_EXPRESSION {$$ = new Expression(Expression::EXPRESSION_SIMPLE, $1);}
-    | SIMPLE_EXPRESSION '=' SIMPLE_EXPRESSION {$$ = new Expression(Expression::EXPRESSION_EQ, $1, $3);}
-    | SIMPLE_EXPRESSION '#' SIMPLE_EXPRESSION {$$ = new Expression(Expression::EXPRESSION_NOTEQ, $1, $3);}
-    | SIMPLE_EXPRESSION '<' SIMPLE_EXPRESSION {$$ = new Expression(Expression::EXPRESSION_LS, $1, $3);}
-    | SIMPLE_EXPRESSION LSEQ SIMPLE_EXPRESSION {$$ = new Expression(Expression::EXPRESSION_LSEQ, $1, $3);}
-    | SIMPLE_EXPRESSION '>' SIMPLE_EXPRESSION {$$ = new Expression(Expression::EXPRESSION_GR, $1, $3);}
-    | SIMPLE_EXPRESSION GREQ SIMPLE_EXPRESSION {$$ = new Expression(Expression::EXPRESSION_GREQ, $1, $3);}
-    ;
-
-ASSIGNMENT:
-    IDENT ASSIGN EXPRESSION 
-    ;
-
-STATEMENT:
-    ASSIGNMENT
-    ;
-
-STATEMENT_SEQUENCE:
-    STATEMENT 
-    | STATEMENT_SEQUENCE ';' STATEMENT
+SELECTOR:
+    '[' EXPRESSION ']' {$$ = new Selector($2)}
+    | {$$ = NULL;}
     ;
 
 %%
-
-/*
-
-
-PROGRAM:
-    PROGRAM STATEMENT '\n' {std::cerr << "program statement" << std::endl;}
-    | {std::cerr << "NONE" << std::endl;}
-    ;
-
-{std::cerr << "IDENT" << std::endl; $$ = $1;}
-
-{std::cerr << "NUMBER" << std::endl; $1->run().print(); std::cerr << std::endl; $$ = $1;}
-
-{id[$1->name] = $3->run(); id[$1->name].print(); std::cerr << "SET VAR" << std::endl;}
-*/
 
 void yyerror(char *s) {
     fprintf(stderr, "Error: %s\n", s);

@@ -22,6 +22,9 @@ class Factor;
 class Term;
 class SimpleExpression;
 class Expression;
+class Assignment;
+class Statement;
+class StatementSequence;
 
 class Number : public Node
 {
@@ -128,14 +131,39 @@ public:
     static const int EXPRESSION_GREQ = 7;
 };
 
+class Assignment : public Node
+{
+public:
+    Assignment(Ident* ident, Selector* selector, Expression* expr);
+    virtual void print();
+    virtual DataType run();
+
+    Ident* ident;
+    Selector* selector;
+    Expression* expr;
+};
+
 class Statement : public Node
 {
 public:
+    Statement(Assignment* assignment);
+    virtual void print();
+    virtual DataType run();
 
+    Assignment* assignment;
+    static const int STATEMENT_ASSIGN = 1;
+    static const int STATEMENT_CALL = 2;
+    static const int STATEMENT_IF = 3;
+    static const int STATEMENT_WHILE = 4;
 };
 
 class StatementSequence : public Node
 {
 public:
+    StatementSequence(Statement* statement, StatementSequence* statementSequence = NULL);
+    virtual void print();
+    virtual DataType run();
 
+    Statement* statement;
+    StatementSequence* statementSequence;
 };
