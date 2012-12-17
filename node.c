@@ -421,11 +421,34 @@ DataType Assignment::run()
 
 /** Statement **/
 
-Statement::Statement(Assignment* assignment) : assignment(assignment) {}
+Statement::Statement() : type(0) {}
+
+Statement* Statement::newAssignmentStatement(Assignment* assignment)
+{   
+    Statement* statement = new Statement();
+    statement->type = STATEMENT_ASSIGN;
+    statement->statement.assignment = assignment;
+    return statement;
+}
+
+Statement* Statement::newIFStatement(IFStatement* ifstatement)
+{
+    Statement* statement = new Statement();
+    statement->type = STATEMENT_IF;
+    statement->statement.ifstatement = ifstatement;
+    return statement;
+}
 
 void Statement::print()
 {
-    assignment->print();
+    if (type == STATEMENT_ASSIGN)
+    {
+        statement.assignment->print();
+    }
+    else if (type == STATEMENT_IF)
+    {
+        statement.ifstatement->print();
+    }
 }
 
 DataType Statement::run()
@@ -433,7 +456,14 @@ DataType Statement::run()
 #ifdef PATH_LOGGING
     std::cerr << "Statement::run" << std::endl;
 #endif
-    assignment->run();
+    if (type == STATEMENT_ASSIGN)
+    {
+        return statement.assignment->run();
+    }
+    else if (type == STATEMENT_IF)
+    {
+        return statement.ifstatement->run();
+    }
 }
 
 
@@ -470,4 +500,214 @@ DataType StatementSequence::run()
         statementSequence->run();
         return statement->run();
    }
+}
+
+
+/** ActualParameters **/
+
+ActualParameters::ActualParameters(Expression* expression, ActualParameters* actualParameters)
+ : expression(expression), actualParameters(actualParameters) {}
+
+void ActualParameters::print()
+{
+    if (actualParameters == NULL)
+    {
+        expression->print();
+    }
+    else
+    {
+        actualParameters->print();
+        std::cout << ", ";
+        expression->print();
+    }
+}
+
+DataType ActualParameters::run()
+{
+#ifdef PATH_LOGGING
+    std::cerr << "ActualParameters::run" << std::endl;
+#endif
+    params.clear();
+    if (actualParameters == NULL)
+    {
+        params.push_back(expression->run());
+    }
+    else
+    {
+        actualParameters->run();
+        params = actualParameters->params;
+        params.push_back(expression->run());
+    }
+
+    return DataType();
+}
+
+
+/** ProcedureCall **/
+
+ProcedureCall::ProcedureCall(Ident* ident, ActualParameters* actualParameters)
+ : ident(ident), actualParameters(actualParameters) {}
+
+void ProcedureCall::print()
+{
+    ident->print();
+    if (actualParameters != NULL)
+    {
+        std::cout << "(";
+        actualParameters->print();
+        std::cout << ")";
+    }
+}
+
+DataType ProcedureCall::run()
+{   
+#ifdef PATH_LOGGING
+    std::cerr << "ProcedureCall::run" << std::endl;
+#endif
+   /* if (ident->name == "Write")
+    {
+        if (actualParameters == NULL)
+        {
+            std::cerr << "Write procedure needs at least one parameter" << std::endl;
+            exit(-1);
+        }
+
+        actualParameters->run();
+        std::vector<DataType> params = actualParameters->params;
+
+        for (size_t index = 0; index < params.size(); ++index)
+        {
+            params[i].print();
+            std::cout << " ";
+        }
+    }
+    else if (ident->name == "Ololo")
+    {
+        if (actualParameters == NULL)
+        {
+            std::cerr << "Write procedure needs at least one parameter" << std::endl;
+            exit(-1);
+        }
+
+        actualParameters->run();
+        std::vector<DataType> params = actualParameters->params;
+
+        for (size_t index = 0; index < params.size(); ++index)
+        {
+            params[i].print();
+            std::cout << " ";
+        }
+    }*/
+
+    return DataType();
+}
+
+
+/** IFBody **/
+
+IFBody::IFBody(Expression* _ELSEIF, StatementSequence* _THEN, IFBody* _BODY)
+ : _ELSEIF(_ELSEIF), _THEN(_THEN), _BODY(_BODY) {}
+
+void IFBody::print()
+{
+    std::cout << "ELSEIF ";
+    _ELSEIF->print();
+    std::cout << " THEN ";
+    _THEN->print();
+    if (_BODY != NULL)
+    {
+        std::cout << " ";
+        _BODY->print();
+    }
+}
+
+DataType IFBody::run()
+{
+#ifdef PATH_LOGGING
+    std::cerr << "IFBody::run" << std::endl;
+#endif
+    DataType res = _ELSEIF->run();
+    if (res.type != BOOL_TYPE)
+    {
+        std::cout << "ELSEIF statement is not a boolean" << std::endl;
+        exit(-1);
+    }
+
+    if (res.data.boolValue)
+    {
+        _THEN->run();
+        return res;
+    }
+    else
+    {
+        if (_BODY == NULL)
+        {
+            return ~res;
+        }
+        else
+        {
+            return _BODY->run();
+        }
+    }
+}
+
+
+/** IFStatement **/
+
+IFStatement::IFStatement(Expression* _IF, StatementSequence* _THEN, IFBody* _BODY, StatementSequence* _ELSE)
+ : _IF(_IF), _THEN(_THEN), _BODY(_BODY), _ELSE(_ELSE) {}
+
+void IFStatement::print()
+{
+    std::cout << "IF ";
+    _IF->print();
+    std::cout << " THEN ";
+    _THEN->print();
+
+    if (_BODY != NULL)
+    {
+        std::cout << " ";
+        _BODY->print();
+    }
+
+    if (_ELSE != NULL)
+    {
+        std::cout << " ";
+        _ELSE->print();
+    }
+}
+
+DataType IFStatement::run()
+{
+#ifdef PATH_LOGGING
+    std::cerr << "IFStatement::run" << std::endl;
+#endif
+    DataType res = _IF->run();
+    if (res.type != BOOL_TYPE)
+    {
+        std::cout << "IF statement is not a boolean" << std::endl;
+        exit(-1);
+    }
+
+    if (res.data.boolValue)
+    {
+        _THEN->run();
+        return res;
+    }
+
+    if (_BODY != NULL)
+    {
+        res = _BODY->run();
+        if (res.data.boolValue)
+        {
+            return res;
+        }
+    }
+
+    if (_ELSE != NULL)
+    {
+        _ELSE->run();
+    }
+
+    return DataType();
 }

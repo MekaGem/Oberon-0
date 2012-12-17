@@ -24,12 +24,19 @@ NUMBER {FLOAT}|{INTEGER}
 ">=" {return GREQ;}
 ":=" {return ASSIGN;}
 
+"IF" {return IF;}
+"THEN" {return THEN;}
+"ELSEIF" {return ELSEIF;}
+"ELSE" {return ELSE;}
+"BEGIN" {return _BEGIN;}
+"END" {return END;}
+
 {IDENT} { yylval.ident_node = new Ident(yytext); return IDENT; }
 
 {FLOAT} { yylval.number_node = new Number(DataType::newFloat(atof(yytext))); return NUMBER; }
 {INTEGER} { yylval.number_node = new Number(DataType::newInteger(atoi(yytext))); return NUMBER; }
 
-[-+()~*&=\;\#\[\]\<\>] {return *yytext;}
+[-\,+()~*&=\;\#\[\]\<\>] {return *yytext;}
 
 [ \t\n] ;
 

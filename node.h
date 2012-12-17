@@ -3,6 +3,7 @@
 #include <map>
 #include <cstdio>
 #include <string>
+#include <vector>
 #include <iostream>
 #include "data_type.h"
 
@@ -27,6 +28,10 @@ class Expression;
 class Assignment;
 class Statement;
 class StatementSequence;
+class ActualParameters;
+class ProcedureCall;
+class IFBody;
+class IFStatement;
 
 class Number : public Node
 {
@@ -148,11 +153,18 @@ public:
 class Statement : public Node
 {
 public:
-    Statement(Assignment* assignment);
+    Statement();
+    static Statement* newAssignmentStatement(Assignment* assignment);
+    static Statement* newIFStatement(IFStatement* ifstatement);
     virtual void print();
     virtual DataType run();
 
-    Assignment* assignment;
+    int type;
+    union
+    {
+        Assignment* assignment;
+        IFStatement* ifstatement;
+    } statement;
     static const int STATEMENT_ASSIGN = 1;
     static const int STATEMENT_CALL = 2;
     static const int STATEMENT_IF = 3;
@@ -168,4 +180,52 @@ public:
 
     Statement* statement;
     StatementSequence* statementSequence;
+};
+
+class ActualParameters : public Node
+{
+public:
+    ActualParameters(Expression* expression, ActualParameters* actualParameters = NULL);
+    virtual void print();
+    virtual DataType run();
+
+    Expression* expression;
+    ActualParameters* actualParameters;
+    std::vector<DataType> params;
+};
+
+class ProcedureCall : public Node
+{
+public:
+    ProcedureCall(Ident* ident, ActualParameters* actualParameters = NULL);
+    virtual void print();
+    virtual DataType run();
+
+    Ident* ident;
+    ActualParameters* actualParameters;
+};
+
+class IFBody : public Node
+{
+public:
+    IFBody(Expression* _ELSEIF, StatementSequence* _THEN, IFBody* _BODY = NULL);
+    virtual void print();
+    virtual DataType run();
+
+    Expression* _ELSEIF;
+    StatementSequence* _THEN;
+    IFBody* _BODY;
+};
+
+class IFStatement : public Node
+{
+public:
+    IFStatement(Expression* _IF, StatementSequence* _THEN, IFBody* _BODY, StatementSequence* _ELSE = NULL);
+    virtual void print();
+    virtual DataType run();
+
+    Expression* _IF;
+    StatementSequence* _THEN;
+    IFBody* _BODY;
+    StatementSequence* _ELSE;
 };

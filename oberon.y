@@ -19,7 +19,10 @@
     Expression* expression_node;
     Assignment* assign_node;
     Statement* statement_node;
+    ActualParameters* actual_parameters_node;
     StatementSequence* statement_sequence_node;
+    IFBody* ifbody_node;
+    IFStatement* ifstatement_node;
 };
 
 %token <number_node> NUMBER
@@ -31,6 +34,14 @@
 %token GREQ
 %token ASSIGN
 
+%token IF
+%token THEN
+%token ELSEIF
+%token ELSE
+%token _BEGIN
+%token END
+
+%left ','
 %left '+'
 %left '-'
 %left '*'
@@ -48,7 +59,11 @@
 %left '='
 %left ASSIGN
 
+%type <node> MODULE
 %type <statement_sequence_node> STATEMENT_SEQUENCE
+%type <ifstatement_node> IFSTATEMENT
+%type <ifbody_node> IFBODY
+%type <actual_parameters_node> ACTUAL_PARAMETERS
 %type <statement_node> STATEMENT
 %type <assign_node> ASSIGNMENT
 %type <expression_node> EXPRESSION
@@ -59,13 +74,33 @@
 
 %%
 
+MODULE:
+    _BEGIN STATEMENT_SEQUENCE END {$2->run();}
+    ;
+
 STATEMENT_SEQUENCE:
-    STATEMENT {$$ = new StatementSequence($1); $1->print(); std::cout << ";" << std::endl; $1->run();}
-    | STATEMENT_SEQUENCE ';' STATEMENT {$$ = new StatementSequence($3, $1); $3->print(); $3->print();}
+    STATEMENT {$$ = new StatementSequence($1); /*$1->run();*/}
+    | STATEMENT_SEQUENCE ';' STATEMENT {$$ = new StatementSequence($3, $1); /*$3->run();*/}
+    ;
+
+IFSTATEMENT:
+    IF EXPRESSION THEN STATEMENT_SEQUENCE IFBODY END {$$ = new IFStatement($2, $4, $5);}
+    | IF EXPRESSION THEN STATEMENT_SEQUENCE IFBODY ELSE STATEMENT_SEQUENCE END {$$ = new IFStatement($2, $4, $5, $7);}
+    ;
+
+IFBODY:
+    ELSEIF EXPRESSION THEN STATEMENT_SEQUENCE IFBODY {$$ = new IFBody($2, $4, $5);}
+    | {$$ = NULL;}
+    ;
+
+ACTUAL_PARAMETERS:
+    EXPRESSION {$$ = new ActualParameters($1);}
+    | ACTUAL_PARAMETERS ',' EXPRESSION {$$ = new ActualParameters($3, $1);}
     ;
 
 STATEMENT:
-    ASSIGNMENT {$$ = new Statement($1);}
+    ASSIGNMENT {$$ = Statement::newAssignmentStatement($1);}
+    | IFSTATEMENT {$$ = Statement::newIFStatement($1);}
     ;
 
 ASSIGNMENT:

@@ -1,1 +1,11 @@
-b:=1+5*10+4+2+6
+BEGIN
+	a := 1;
+	b := 1;
+
+	IF a = b THEN
+		a:=a+1
+	END;
+	IF a = b + 1 THEN
+		a:=a+2
+	END
+END
