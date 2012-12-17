@@ -28,8 +28,11 @@ NUMBER {FLOAT}|{INTEGER}
 "THEN" {return THEN;}
 "ELSEIF" {return ELSEIF;}
 "ELSE" {return ELSE;}
-"BEGIN" {return _BEGIN;}
 "END" {return END;}
+
+"BEGIN" {return _BEGIN;}
+"WHILE" {return _WHILE;}
+"DO" {return _DO;}
 
 {IDENT} { yylval.ident_node = new Ident(yytext); return IDENT; }
 

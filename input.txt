@@ -1,11 +1,9 @@
 BEGIN
-	a := 1;
-	b := 1;
+	a := 0;
+	i := 0;
 
-	IF a = b THEN
-		a:=a+1
-	END;
-	IF a = b + 1 THEN
-		a:=a+2
+	WHILE i < 10 DO
+		a := i;
+		i := i + 1
 	END
 END

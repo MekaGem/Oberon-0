@@ -23,6 +23,7 @@
     StatementSequence* statement_sequence_node;
     IFBody* ifbody_node;
     IFStatement* ifstatement_node;
+    WhileStatement* while_statement_node;
 };
 
 %token <number_node> NUMBER
@@ -39,6 +40,8 @@
 %token ELSEIF
 %token ELSE
 %token _BEGIN
+%token _WHILE
+%token _DO
 %token END
 
 %left ','
@@ -60,6 +63,7 @@
 %left ASSIGN
 
 %type <node> MODULE
+%type <while_statement_node> WHILE_STATEMENT
 %type <statement_sequence_node> STATEMENT_SEQUENCE
 %type <ifstatement_node> IFSTATEMENT
 %type <ifbody_node> IFBODY
@@ -83,6 +87,16 @@ STATEMENT_SEQUENCE:
     | STATEMENT_SEQUENCE ';' STATEMENT {$$ = new StatementSequence($3, $1); /*$3->run();*/}
     ;
 
+STATEMENT:
+    ASSIGNMENT {$$ = Statement::newAssignmentStatement($1);}
+    | IFSTATEMENT {$$ = Statement::newIFStatement($1);}
+    | WHILE_STATEMENT {$$ = Statement::newWhileStatement($1);}
+    ;
+
+WHILE_STATEMENT:
+    _WHILE EXPRESSION _DO STATEMENT_SEQUENCE END {$$ = new WhileStatement($2, $4);}
+    ;
+
 IFSTATEMENT:
     IF EXPRESSION THEN STATEMENT_SEQUENCE IFBODY END {$$ = new IFStatement($2, $4, $5);}
     | IF EXPRESSION THEN STATEMENT_SEQUENCE IFBODY ELSE STATEMENT_SEQUENCE END {$$ = new IFStatement($2, $4, $5, $7);}
@@ -96,11 +110,6 @@ IFBODY:
 ACTUAL_PARAMETERS:
     EXPRESSION {$$ = new ActualParameters($1);}
     | ACTUAL_PARAMETERS ',' EXPRESSION {$$ = new ActualParameters($3, $1);}
-    ;
-
-STATEMENT:
-    ASSIGNMENT {$$ = Statement::newAssignmentStatement($1);}
-    | IFSTATEMENT {$$ = Statement::newIFStatement($1);}
     ;
 
 ASSIGNMENT:

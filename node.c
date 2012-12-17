@@ -439,6 +439,14 @@ Statement* Statement::newIFStatement(IFStatement* ifstatement)
     return statement;
 }
 
+Statement* Statement::newWhileStatement(WhileStatement* whileStatement)
+{
+    Statement* statement = new Statement();
+    statement->type = STATEMENT_WHILE;
+    statement->statement.whileStatement = whileStatement;
+    return statement;   
+}
+
 void Statement::print()
 {
     if (type == STATEMENT_ASSIGN)
@@ -448,6 +456,10 @@ void Statement::print()
     else if (type == STATEMENT_IF)
     {
         statement.ifstatement->print();
+    }
+    else if (type == STATEMENT_WHILE)
+    {
+        statement.whileStatement->print();   
     }
 }
 
@@ -463,6 +475,10 @@ DataType Statement::run()
     else if (type == STATEMENT_IF)
     {
         return statement.ifstatement->run();
+    }
+    else if (type == STATEMENT_WHILE)
+    {
+        statement.whileStatement->run();
     }
 }
 
@@ -707,6 +723,39 @@ DataType IFStatement::run()
     if (_ELSE != NULL)
     {
         _ELSE->run();
+    }
+
+    return DataType();
+}
+
+
+/** WhileStatement **/
+
+WhileStatement::WhileStatement(Expression* _while, StatementSequence* _do)
+ : _while(_while), _do(_do) {}
+
+void WhileStatement::print()
+{
+    std::cout << "WHILE ";
+    _while->print();
+    std::cout << " DO ";
+    _do->print();
+    std::cout << " END";
+}
+
+DataType WhileStatement::run()
+{
+    DataType res = _while->run();
+    if (res.type != BOOL_TYPE)
+    {
+        std::cout << "WHILE statement is not a boolean" << std::endl;
+        exit(-1);
+    }
+
+    while (res.data.boolValue)
+    {
+        _do->run();
+        res = _while->run();
     }
 
     return DataType();

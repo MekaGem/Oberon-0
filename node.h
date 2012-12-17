@@ -32,6 +32,7 @@ class ActualParameters;
 class ProcedureCall;
 class IFBody;
 class IFStatement;
+class WhileStatement;
 
 class Number : public Node
 {
@@ -156,6 +157,7 @@ public:
     Statement();
     static Statement* newAssignmentStatement(Assignment* assignment);
     static Statement* newIFStatement(IFStatement* ifstatement);
+    static Statement* newWhileStatement(WhileStatement* whileStatement);
     virtual void print();
     virtual DataType run();
 
@@ -164,6 +166,7 @@ public:
     {
         Assignment* assignment;
         IFStatement* ifstatement;
+        WhileStatement* whileStatement;
     } statement;
     static const int STATEMENT_ASSIGN = 1;
     static const int STATEMENT_CALL = 2;
@@ -228,4 +231,15 @@ public:
     StatementSequence* _THEN;
     IFBody* _BODY;
     StatementSequence* _ELSE;
+};
+
+class WhileStatement : public Node
+{
+public:
+    WhileStatement(Expression* _while, StatementSequence* _do);
+    virtual void print();
+    virtual DataType run();
+
+    Expression* _while;
+    StatementSequence* _do;
 };
