@@ -13,7 +13,7 @@ void Number::print()
     data.print();
 }
 
-DataType Number::run()
+DataType Number::run(ArgumentList* arguments)
 {
 #ifdef PATH_LOGGING
     std::cerr << "Number::run" << std::endl;
@@ -31,12 +31,27 @@ void Ident::print()
     std::cout << name;
 }
 
-DataType Ident::run()
+DataType Ident::run(ArgumentList* arguments)
 {
 #ifdef PATH_LOGGING
     std::cerr << "Ident::run" << std::endl;
 #endif
-    return id[name];
+    if (arguments == NULL || arguments->find(name) == arguments->end())
+    {
+        if (id.find(name) == id.end())
+        {
+            std::cerr << "There is no any ident with name \"" << name << "\" in this scope" << std::endl;
+            exit(-1);
+        }
+        else
+        {
+            return id[name];
+        }
+    }
+    else
+    {
+        return arguments->at(name);
+    }
 }
 
 
@@ -54,7 +69,7 @@ void Selector::print()
     }
 }
 
-DataType Selector::run()
+DataType Selector::run(ArgumentList* arguments)
 {
 #ifdef PATH_LOGGING
     std::cerr << "Selector::run" << std::endl;
@@ -65,7 +80,7 @@ DataType Selector::run()
     }
     else
     {
-        return exp->run();
+        return exp->run(arguments);
     }
 }
 
@@ -123,7 +138,7 @@ void Factor::print()
     }
 }
 
-DataType Factor::run()
+DataType Factor::run(ArgumentList* arguments)
 {
 #ifdef PATH_LOGGING
     std::cerr << "Factor::run" << std::endl;
@@ -132,7 +147,7 @@ DataType Factor::run()
     {
         if (selector == NULL)
         {
-            return factor.ident->run();
+            return factor.ident->run(arguments);
         }   
         else
         {
@@ -142,15 +157,15 @@ DataType Factor::run()
     }
     else if (type == FACTOR_NUMBER)
     {
-        return factor.number->run();
+        return factor.number->run(arguments);
     }
     else if (type == FACTOR_EXPR)
     {
-        return factor.expr->run();
+        return factor.expr->run(arguments);
     }
     else if (type == FACTOR_NOT)
     {
-        return ~(factor.factor->run());
+        return ~(factor.factor->run(arguments));
     }
 }
 
@@ -190,30 +205,30 @@ void Term::print()
     }
 }
 
-DataType Term::run()
+DataType Term::run(ArgumentList* arguments)
 {
 #ifdef PATH_LOGGING
     std::cerr << "Turn::run" << std::endl;
 #endif
     if (type == TERM_FACTOR)
     {
-        return factor->run();
+        return factor->run(arguments);
     }
     else if (type == TERM_MULT)
     {
-        return term->run() * factor->run();
+        return term->run(arguments) * factor->run(arguments);
     }
     else if (type == TERM_DIV)
     {
-        return term->run() * factor->run();
+        return term->run(arguments) * factor->run(arguments);
     }
     else if (type == TERM_MOD)
     {
-        return term->run() / factor->run();
+        return term->run(arguments) / factor->run(arguments);
     }
     else if (type == TERM_AND)
     {
-        return term->run() & factor->run();
+        return term->run(arguments) & factor->run(arguments);
     }
 }
 
@@ -256,30 +271,30 @@ void SimpleExpression::print()
     }
 }
 
-DataType SimpleExpression::run()
+DataType SimpleExpression::run(ArgumentList* arguments)
 {
 #ifdef PATH_LOGGING
     std::cerr << "SimpleExpression::run" << std::endl;
 #endif
     if (type == SIMPLE_EXPRESSION_LPLUS)
     {
-        return term->run();
+        return term->run(arguments);
     }
     else if (type == SIMPLE_EXPRESSION_LMINUS)
     {
-        return -(term->run());
+        return -(term->run(arguments));
     }
     else if (type == SIMPLE_EXPRESSION_PLUS)
     {
-        return simpleExpr->run() + term->run();
+        return simpleExpr->run(arguments) + term->run(arguments);
     }
     else if (type == SIMPLE_EXPRESSION_MINUS)
     {
-        return simpleExpr->run() - term->run();
+        return simpleExpr->run(arguments) - term->run(arguments);
     }
     else if (type == SIMPLE_EXPRESSION_OR)
     {
-        return simpleExpr->run() | term->run();
+        return simpleExpr->run(arguments) | term->run(arguments);
     }
 }
 
@@ -345,38 +360,38 @@ void Expression::print()
     }
 }
 
-DataType Expression::run()
+DataType Expression::run(ArgumentList* arguments)
 {
 #ifdef PATH_LOGGING
     std::cerr << "Expression::run" << std::endl;
 #endif
     if (type == EXPRESSION_SIMPLE)
     {
-        return expr1->run();
+        return expr1->run(arguments);
     }
     else if (type == EXPRESSION_EQ)
     {
-        return expr1->run() == expr2->run();
+        return expr1->run(arguments) == expr2->run(arguments);
     }
     else if (type == EXPRESSION_NOTEQ)
     {
-        return expr1->run() != expr2->run();
+        return expr1->run(arguments) != expr2->run(arguments);
     }
     else if (type == EXPRESSION_LS)
     {
-        return expr1->run() < expr2->run();
+        return expr1->run(arguments) < expr2->run(arguments);
     }
     else if (type == EXPRESSION_LSEQ)
     {
-        return expr1->run() <= expr2->run();
+        return expr1->run(arguments) <= expr2->run(arguments);
     }
     else if (type == EXPRESSION_GR)
     {
-        return expr1->run() > expr2->run();
+        return expr1->run(arguments) > expr2->run(arguments);
     }
     else if (type == EXPRESSION_GREQ)
     {
-        return expr1->run() >= expr2->run();
+        return expr1->run(arguments) >= expr2->run(arguments);
     }
 }
 
@@ -397,19 +412,45 @@ void Assignment::print()
     expr->print();
 }
 
-DataType Assignment::run()
+DataType Assignment::run(ArgumentList* arguments)
 {
 #ifdef PATH_LOGGING
     std::cerr << "Assignment::run" << std::endl;
 #endif
     if (selector == NULL)
     {
-        std::cerr << "Variable: " << ident->name << " is set with: ";
-        (expr->run()).print();
-        std::cerr << std::endl;
+        if (arguments == NULL || arguments->find(ident->name) == arguments->end())
+        {
+            if (id.find(ident->name) == id.end())
+            {
+                std::cerr << "There is no any ident with name \"" << ident->name << "\" in this scope" << std::endl;
+                exit(-1);
+            }
+            else
+            {
+                #ifdef PRINT_ASSIGNMENT
 
-        id[ident->name] = expr->run();
-        return id[ident->name];
+                id[ident->name] = expr->run(arguments);
+                std::cerr << "Global variable: " << ident->name << " is set with: ";
+                id[ident->name].print();
+                std::cerr << std::endl;
+
+                #endif
+                return id[ident->name];
+            }
+        }
+        else
+        {
+            #ifdef PRINT_ASSIGNMENT
+
+            (*arguments)[ident->name] = expr->run(arguments);
+            std::cerr << "Local variable: " << ident->name << " is set with: ";
+            arguments->at(ident->name).print();
+            std::cerr << std::endl;
+
+            #endif  
+            return arguments->at(ident->name);
+        }
     }
     else
     {
@@ -463,22 +504,22 @@ void Statement::print()
     }
 }
 
-DataType Statement::run()
+DataType Statement::run(ArgumentList* arguments)
 {
 #ifdef PATH_LOGGING
     std::cerr << "Statement::run" << std::endl;
 #endif
     if (type == STATEMENT_ASSIGN)
     {
-        return statement.assignment->run();
+        return statement.assignment->run(arguments);
     }
     else if (type == STATEMENT_IF)
     {
-        return statement.ifstatement->run();
+        return statement.ifstatement->run(arguments);
     }
     else if (type == STATEMENT_WHILE)
     {
-        statement.whileStatement->run();
+        statement.whileStatement->run(arguments);
     }
 }
 
@@ -502,19 +543,19 @@ void StatementSequence::print()
     }
 }
 
-DataType StatementSequence::run()
+DataType StatementSequence::run(ArgumentList* arguments)
 {
 #ifdef PATH_LOGGING
     std::cerr << "StatementSequence::run" << std::endl;
 #endif
     if (statementSequence == NULL)
     {
-        return statement->run();
+        return statement->run(arguments);
     }
     else
     {
-        statementSequence->run();
-        return statement->run();
+        statementSequence->run(arguments);
+        return statement->run(arguments);
    }
 }
 
@@ -538,7 +579,7 @@ void ActualParameters::print()
     }
 }
 
-DataType ActualParameters::run()
+DataType ActualParameters::run(ArgumentList* arguments)
 {
 #ifdef PATH_LOGGING
     std::cerr << "ActualParameters::run" << std::endl;
@@ -546,13 +587,13 @@ DataType ActualParameters::run()
     params.clear();
     if (actualParameters == NULL)
     {
-        params.push_back(expression->run());
+        params.push_back(expression->run(arguments));
     }
     else
     {
-        actualParameters->run();
+        actualParameters->run(arguments);
         params = actualParameters->params;
-        params.push_back(expression->run());
+        params.push_back(expression->run(arguments));
     }
 
     return DataType();
@@ -575,7 +616,7 @@ void ProcedureCall::print()
     }
 }
 
-DataType ProcedureCall::run()
+DataType ProcedureCall::run(ArgumentList* arguments)
 {   
 #ifdef PATH_LOGGING
     std::cerr << "ProcedureCall::run" << std::endl;
@@ -588,7 +629,7 @@ DataType ProcedureCall::run()
             exit(-1);
         }
 
-        actualParameters->run();
+        actualParameters->run(arguments);
         std::vector<DataType> params = actualParameters->params;
 
         for (size_t index = 0; index < params.size(); ++index)
@@ -605,7 +646,7 @@ DataType ProcedureCall::run()
             exit(-1);
         }
 
-        actualParameters->run();
+        actualParameters->run(arguments);
         std::vector<DataType> params = actualParameters->params;
 
         for (size_t index = 0; index < params.size(); ++index)
@@ -621,28 +662,28 @@ DataType ProcedureCall::run()
 
 /** IFBody **/
 
-IFBody::IFBody(Expression* _ELSEIF, StatementSequence* _THEN, IFBody* _BODY)
- : _ELSEIF(_ELSEIF), _THEN(_THEN), _BODY(_BODY) {}
+IFBody::IFBody(Expression* _elseif, StatementSequence* _then, IFBody* body)
+ : _elseif(_elseif), _then(_then), body(body) {}
 
 void IFBody::print()
 {
     std::cout << "ELSEIF ";
-    _ELSEIF->print();
+    _elseif->print();
     std::cout << " THEN ";
-    _THEN->print();
-    if (_BODY != NULL)
+    _then->print();
+    if (body != NULL)
     {
         std::cout << " ";
-        _BODY->print();
+        body->print();
     }
 }
 
-DataType IFBody::run()
+DataType IFBody::run(ArgumentList* arguments)
 {
 #ifdef PATH_LOGGING
     std::cerr << "IFBody::run" << std::endl;
 #endif
-    DataType res = _ELSEIF->run();
+    DataType res = _elseif->run(arguments);
     if (res.type != BOOL_TYPE)
     {
         std::cout << "ELSEIF statement is not a boolean" << std::endl;
@@ -651,18 +692,18 @@ DataType IFBody::run()
 
     if (res.data.boolValue)
     {
-        _THEN->run();
+        _then->run(arguments);
         return res;
     }
     else
     {
-        if (_BODY == NULL)
+        if (body == NULL)
         {
             return ~res;
         }
         else
         {
-            return _BODY->run();
+            return body->run(arguments);
         }
     }
 }
@@ -670,35 +711,35 @@ DataType IFBody::run()
 
 /** IFStatement **/
 
-IFStatement::IFStatement(Expression* _IF, StatementSequence* _THEN, IFBody* _BODY, StatementSequence* _ELSE)
- : _IF(_IF), _THEN(_THEN), _BODY(_BODY), _ELSE(_ELSE) {}
+IFStatement::IFStatement(Expression* _if, StatementSequence* _then, IFBody* body, StatementSequence* _else)
+ : _if(_if), _then(_then), body(body), _else(_else) {}
 
 void IFStatement::print()
 {
     std::cout << "IF ";
-    _IF->print();
+    _if->print();
     std::cout << " THEN ";
-    _THEN->print();
+    _then->print();
 
-    if (_BODY != NULL)
+    if (body != NULL)
     {
         std::cout << " ";
-        _BODY->print();
+        body->print();
     }
 
-    if (_ELSE != NULL)
+    if (_else != NULL)
     {
         std::cout << " ";
-        _ELSE->print();
+        _else->print();
     }
 }
 
-DataType IFStatement::run()
+DataType IFStatement::run(ArgumentList* arguments)
 {
 #ifdef PATH_LOGGING
     std::cerr << "IFStatement::run" << std::endl;
 #endif
-    DataType res = _IF->run();
+    DataType res = _if->run(arguments);
     if (res.type != BOOL_TYPE)
     {
         std::cout << "IF statement is not a boolean" << std::endl;
@@ -707,22 +748,22 @@ DataType IFStatement::run()
 
     if (res.data.boolValue)
     {
-        _THEN->run();
+        _then->run(arguments);
         return res;
     }
 
-    if (_BODY != NULL)
+    if (body != NULL)
     {
-        res = _BODY->run();
+        res = body->run(arguments);
         if (res.data.boolValue)
         {
             return res;
         }
     }
 
-    if (_ELSE != NULL)
+    if (_else != NULL)
     {
-        _ELSE->run();
+        _else->run(arguments);
     }
 
     return DataType();
@@ -743,9 +784,9 @@ void WhileStatement::print()
     std::cout << " END";
 }
 
-DataType WhileStatement::run()
+DataType WhileStatement::run(ArgumentList* arguments)
 {
-    DataType res = _while->run();
+    DataType res = _while->run(arguments);
     if (res.type != BOOL_TYPE)
     {
         std::cout << "WHILE statement is not a boolean" << std::endl;
@@ -754,8 +795,8 @@ DataType WhileStatement::run()
 
     while (res.data.boolValue)
     {
-        _do->run();
-        res = _while->run();
+        _do->run(arguments);
+        res = _while->run(arguments);
     }
 
     return DataType();

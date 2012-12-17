@@ -24,11 +24,16 @@ NUMBER {FLOAT}|{INTEGER}
 ">=" {return GREQ;}
 ":=" {return ASSIGN;}
 
-"IF" {return IF;}
-"THEN" {return THEN;}
-"ELSEIF" {return ELSEIF;}
-"ELSE" {return ELSE;}
-"END" {return END;}
+"IF" {return _IF;}
+"THEN" {return _THEN;}
+"ELSEIF" {return _ELSEIF;}
+"ELSE" {return _ELSE;}
+"END" {return _END;}
+
+"MODULE" {return _MODULE;}
+"CONST" {return _CONST;}
+"TYPE" {return _TYPE;}
+"VAR" {return _VAR;}
 
 "BEGIN" {return _BEGIN;}
 "WHILE" {return _WHILE;}

@@ -8,14 +8,16 @@
 #include "data_type.h"
 
 extern std::map<std::string, DataType> id;
+typedef std::map<std::string, DataType> ArgumentList;
 
 // #define PATH_LOGGING
+#define PRINT_ASSIGNMENT
 
 class Node 
 {
 public:
     virtual void print() = 0;
-    virtual DataType run() = 0;
+    virtual DataType run(ArgumentList* arguments = NULL) = 0;
 };
 
 class Number;
@@ -39,7 +41,7 @@ class Number : public Node
 public:
     Number(DataType data);
     virtual void print();
-    virtual DataType run();
+    virtual DataType run(ArgumentList* arguments = NULL);
 
     DataType data;
 };
@@ -49,7 +51,7 @@ class Ident : public Node
 public:
     Ident(const char *name);
     virtual void print();
-    virtual DataType run();
+    virtual DataType run(ArgumentList* arguments = NULL);
 
     std::string name;
 };
@@ -59,7 +61,7 @@ class Selector : public Node
 public:
     Selector(Expression* exp = NULL);
     virtual void print();
-    virtual DataType run();
+    virtual DataType run(ArgumentList* arguments = NULL);
 
     Expression* exp;
 };
@@ -69,7 +71,7 @@ class Factor : public Node
 public:
     Factor(int type, Node *node, Selector *selector = NULL);
     virtual void print();
-    virtual DataType run();
+    virtual DataType run(ArgumentList* arguments = NULL);
 
     union
     {
@@ -91,7 +93,7 @@ class Term : public Node
 public:
     Term(int type, Factor* factor, Term* term = NULL);
     virtual void print();
-    virtual DataType run();
+    virtual DataType run(ArgumentList* arguments = NULL);
 
     int type;
     Factor* factor;
@@ -108,7 +110,7 @@ class SimpleExpression : public Node
 public:
     SimpleExpression(int type, Term* term, SimpleExpression* simpleExpr = NULL);
     virtual void print();
-    virtual DataType run();
+    virtual DataType run(ArgumentList* arguments = NULL);
 
     int type;
     Term* term;
@@ -125,7 +127,7 @@ class Expression : public Node
 public:
     Expression(int type, SimpleExpression* expr1, SimpleExpression* expr2 = NULL);
     virtual void print();
-    virtual DataType run();
+    virtual DataType run(ArgumentList* arguments = NULL);
 
     int type;
     SimpleExpression* expr1;
@@ -144,7 +146,7 @@ class Assignment : public Node
 public:
     Assignment(Ident* ident, Selector* selector, Expression* expr);
     virtual void print();
-    virtual DataType run();
+    virtual DataType run(ArgumentList* arguments = NULL);
 
     Ident* ident;
     Selector* selector;
@@ -159,7 +161,7 @@ public:
     static Statement* newIFStatement(IFStatement* ifstatement);
     static Statement* newWhileStatement(WhileStatement* whileStatement);
     virtual void print();
-    virtual DataType run();
+    virtual DataType run(ArgumentList* arguments = NULL);
 
     int type;
     union
@@ -179,7 +181,7 @@ class StatementSequence : public Node
 public:
     StatementSequence(Statement* statement, StatementSequence* statementSequence = NULL);
     virtual void print();
-    virtual DataType run();
+    virtual DataType run(ArgumentList* arguments = NULL);
 
     Statement* statement;
     StatementSequence* statementSequence;
@@ -190,7 +192,7 @@ class ActualParameters : public Node
 public:
     ActualParameters(Expression* expression, ActualParameters* actualParameters = NULL);
     virtual void print();
-    virtual DataType run();
+    virtual DataType run(ArgumentList* arguments = NULL);
 
     Expression* expression;
     ActualParameters* actualParameters;
@@ -202,7 +204,7 @@ class ProcedureCall : public Node
 public:
     ProcedureCall(Ident* ident, ActualParameters* actualParameters = NULL);
     virtual void print();
-    virtual DataType run();
+    virtual DataType run(ArgumentList* arguments = NULL);
 
     Ident* ident;
     ActualParameters* actualParameters;
@@ -211,26 +213,26 @@ public:
 class IFBody : public Node
 {
 public:
-    IFBody(Expression* _ELSEIF, StatementSequence* _THEN, IFBody* _BODY = NULL);
+    IFBody(Expression* _elseif, StatementSequence* _then, IFBody* body = NULL);
     virtual void print();
-    virtual DataType run();
+    virtual DataType run(ArgumentList* arguments = NULL);
 
-    Expression* _ELSEIF;
-    StatementSequence* _THEN;
-    IFBody* _BODY;
+    Expression* _elseif;
+    StatementSequence* _then;
+    IFBody* body;
 };
 
 class IFStatement : public Node
 {
 public:
-    IFStatement(Expression* _IF, StatementSequence* _THEN, IFBody* _BODY, StatementSequence* _ELSE = NULL);
+    IFStatement(Expression* _if, StatementSequence* _then, IFBody* body, StatementSequence* _else = NULL);
     virtual void print();
-    virtual DataType run();
+    virtual DataType run(ArgumentList* arguments = NULL);
 
-    Expression* _IF;
-    StatementSequence* _THEN;
-    IFBody* _BODY;
-    StatementSequence* _ELSE;
+    Expression* _if;
+    StatementSequence* _then;
+    IFBody* body;
+    StatementSequence* _else;
 };
 
 class WhileStatement : public Node
@@ -238,7 +240,7 @@ class WhileStatement : public Node
 public:
     WhileStatement(Expression* _while, StatementSequence* _do);
     virtual void print();
-    virtual DataType run();
+    virtual DataType run(ArgumentList* arguments = NULL);
 
     Expression* _while;
     StatementSequence* _do;

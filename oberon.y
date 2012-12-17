@@ -35,14 +35,18 @@
 %token GREQ
 %token ASSIGN
 
-%token IF
-%token THEN
-%token ELSEIF
-%token ELSE
+%token _IF
+%token _THEN
+%token _ELSEIF
+%token _ELSE
 %token _BEGIN
 %token _WHILE
 %token _DO
-%token END
+%token _END
+%token _MODULE
+%token _CONST
+%token _TYPE
+%token _VAR
 
 %left ','
 %left '+'
@@ -62,6 +66,7 @@
 %left '='
 %left ASSIGN
 
+%type <node> DECLARATIONS
 %type <node> MODULE
 %type <while_statement_node> WHILE_STATEMENT
 %type <statement_sequence_node> STATEMENT_SEQUENCE
@@ -79,7 +84,12 @@
 %%
 
 MODULE:
-    _BEGIN STATEMENT_SEQUENCE END {$2->run();}
+    _MODULE IDENT ';' DECLARATIONS _BEGIN STATEMENT_SEQUENCE _END {$6->run(); $$ = NULL;}
+    | _MODULE IDENT ';' DECLARATIONS _END {$$ = NULL;}
+    ;
+
+DECLARATIONS: 
+    {$$ = NULL;}
     ;
 
 STATEMENT_SEQUENCE:
@@ -94,16 +104,16 @@ STATEMENT:
     ;
 
 WHILE_STATEMENT:
-    _WHILE EXPRESSION _DO STATEMENT_SEQUENCE END {$$ = new WhileStatement($2, $4);}
+    _WHILE EXPRESSION _DO STATEMENT_SEQUENCE _END {$$ = new WhileStatement($2, $4);}
     ;
 
 IFSTATEMENT:
-    IF EXPRESSION THEN STATEMENT_SEQUENCE IFBODY END {$$ = new IFStatement($2, $4, $5);}
-    | IF EXPRESSION THEN STATEMENT_SEQUENCE IFBODY ELSE STATEMENT_SEQUENCE END {$$ = new IFStatement($2, $4, $5, $7);}
+    _IF EXPRESSION _THEN STATEMENT_SEQUENCE IFBODY _END {$$ = new IFStatement($2, $4, $5);}
+    | _IF EXPRESSION _THEN STATEMENT_SEQUENCE IFBODY _ELSE STATEMENT_SEQUENCE _END {$$ = new IFStatement($2, $4, $5, $7);}
     ;
 
 IFBODY:
-    ELSEIF EXPRESSION THEN STATEMENT_SEQUENCE IFBODY {$$ = new IFBody($2, $4, $5);}
+    _ELSEIF EXPRESSION _THEN STATEMENT_SEQUENCE IFBODY {$$ = new IFBody($2, $4, $5);}
     | {$$ = NULL;}
     ;
 
