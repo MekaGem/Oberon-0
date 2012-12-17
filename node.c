@@ -966,15 +966,15 @@ DataType VarDeclarations::run(ArgumentList* arguments)
     for (size_t index = 0; index < identList->name.size(); ++index)
     {
         name.push_back(identList->name[index]);
-        if (identList->type == INT_TYPE)
+        if (type->type == INT_TYPE)
         {
             initValue.push_back(DataType::newInteger(0));
         }
-        else if (identList->type == BOOL_TYPE)
+        else if (type->type == BOOL_TYPE)
         {
             initValue.push_back(DataType::newBoolean(0));   
         }
-        else if (identList->type == BOOL_FLOAT)
+        else if (type->type == FLOAT_TYPE)
         {
             initValue.push_back(DataType::newFloat(0));   
         }
@@ -998,8 +998,15 @@ void Declarations::print()
 
 DataType Declarations::run(ArgumentList* arguments)
 {
-    constDec->run();
-    varDec->run();
+    if (constDec != NULL)
+    {
+        constDec->run();
+    }
+
+    if (varDec != NULL)
+    {
+        varDec->run();
+    }
 
     if (arguments == NULL)
     {
@@ -1010,10 +1017,40 @@ DataType Declarations::run(ArgumentList* arguments)
     std::vector<std::string> name;
     std::vector<DataType> value;
 
-    for ()
+    if (constDec != NULL)
+    {
+        for (size_t index = 0; index < constDec->name.size(); ++index)
+        {
+            name.push_back(constDec->name[index]);
+            value.push_back(constDec->constValue[index]);
+        }
+    }
 
-    for (size_t index = 0; index < constDec)
-    (*arguments)[]
+    if (varDec != NULL)
+    {
+        for (size_t index = 0; index < varDec->name.size(); ++index)
+        {
+            name.push_back(varDec->name[index]);
+            value.push_back(varDec->initValue[index]);
+        }
+    }
+
+    for (size_t index1 = 0; index1 < name.size(); ++index1)
+    {
+        for (size_t index2 = index1 + 1; index2 < name.size(); ++index2)
+        {
+            if (name[index1] == name[index2])
+            {
+                std::cerr << "Ident \"" << name[index1] << "\" is declared twice" << std::endl;
+                exit(-1);
+            }
+        }
+    }
+
+    for (size_t index = 0; index < name.size(); ++index)
+    {
+        (*arguments)[name[index]] = value[index];
+    }
 
     return DataType();
 }

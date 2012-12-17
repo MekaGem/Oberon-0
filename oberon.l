@@ -39,12 +39,16 @@ NUMBER {FLOAT}|{INTEGER}
 "WHILE" {return _WHILE;}
 "DO" {return _DO;}
 
+"INTEGER" {return _INTEGER;}
+"BOOLEAN" {return _BOOLEAN;}
+"FLOAT" {return _FLOAT;}
+
 {IDENT} { yylval.ident_node = new Ident(yytext); return IDENT; }
 
 {FLOAT} { yylval.number_node = new Number(DataType::newFloat(atof(yytext))); return NUMBER; }
 {INTEGER} { yylval.number_node = new Number(DataType::newInteger(atoi(yytext))); return NUMBER; }
 
-[-\,+()~*&=\;\#\[\]\<\>] {return *yytext;}
+[-\,\:+()~*&=\;\#\[\]\<\>] {return *yytext;}
 
 [ \t\n] ;
 

@@ -1,4 +1,6 @@
 MODULE Main;
+	VAR a, i : INTEGER;
+	c : INTEGER;
 BEGIN
 	a := 0;
 	i := 0;

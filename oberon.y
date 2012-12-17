@@ -24,6 +24,12 @@
     IFBody* ifbody_node;
     IFStatement* ifstatement_node;
     WhileStatement* while_statement_node;
+
+    IdentList* ident_list_node;
+    ConstDeclarations* const_declarations_node;
+    Type* type_node;
+    VarDeclarations* var_declarations_node;
+    Declarations* declarations_node;
 };
 
 %token <number_node> NUMBER
@@ -48,6 +54,10 @@
 %token _TYPE
 %token _VAR
 
+%token _INTEGER
+%token _BOOLEAN
+%token _FLOAT
+
 %left ','
 %left '+'
 %left '-'
@@ -66,8 +76,14 @@
 %left '='
 %left ASSIGN
 
-%type <node> DECLARATIONS
 %type <node> MODULE
+
+%type <declarations_node> DECLARATIONS
+%type <ident_list_node> IDENT_LIST
+%type <const_declarations_node> CONST_DECLARATIONS
+%type <type_node> TYPE
+%type <var_declarations_node> VAR_DECLARATIONS
+
 %type <while_statement_node> WHILE_STATEMENT
 %type <statement_sequence_node> STATEMENT_SEQUENCE
 %type <ifstatement_node> IFSTATEMENT
@@ -75,6 +91,7 @@
 %type <actual_parameters_node> ACTUAL_PARAMETERS
 %type <statement_node> STATEMENT
 %type <assign_node> ASSIGNMENT
+
 %type <expression_node> EXPRESSION
 %type <simple_expression_node> SIMPLE_EXPRESSION
 %type <term_node> TERM
@@ -84,12 +101,38 @@
 %%
 
 MODULE:
-    _MODULE IDENT ';' DECLARATIONS _BEGIN STATEMENT_SEQUENCE _END {$6->run(); $$ = NULL;}
-    | _MODULE IDENT ';' DECLARATIONS _END {$$ = NULL;}
+    _MODULE IDENT ';' DECLARATIONS _BEGIN STATEMENT_SEQUENCE _END 
+    {ArgumentList *list = new ArgumentList; $4->run(list); $6->run(list); $$ = NULL;}
+    | _MODULE IDENT ';' DECLARATIONS _END 
+    {ArgumentList *list = new ArgumentList; $4->run(list); $$ = NULL;}
     ;
 
 DECLARATIONS: 
-    {$$ = NULL;}
+    CONST_DECLARATIONS VAR_DECLARATIONS {$$ = new Declarations($1, $2);}
+    | VAR_DECLARATIONS {$$ = new Declarations(NULL, $1);}
+    | CONST_DECLARATIONS {$$ = new Declarations($1, NULL);}
+    | {$$ = new Declarations(NULL, NULL);}
+    ;
+
+VAR_DECLARATIONS:
+    VAR_DECLARATIONS IDENT_LIST ':' TYPE ';' {$$ = new VarDeclarations($2, $4, $1);};
+    | _VAR {$$ = NULL;}
+    ;
+
+IDENT_LIST:
+    IDENT_LIST ',' IDENT {$$ = new IdentList($3, $1);}
+    | IDENT {$$ = new IdentList($1);}
+    ;
+
+TYPE:
+    _INTEGER {$$ = new Type(INT_TYPE);}
+    | _BOOLEAN {$$ = new Type(BOOL_TYPE);}
+    | _FLOAT {$$ = new Type(FLOAT_TYPE);}
+    ;
+
+CONST_DECLARATIONS:
+    CONST_DECLARATIONS IDENT '=' EXPRESSION ';' {$$ = new ConstDeclarations($2, $4, $1);}
+    | _CONST {$$ = NULL;}
     ;
 
 STATEMENT_SEQUENCE:
