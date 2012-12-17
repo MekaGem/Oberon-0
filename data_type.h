@@ -49,22 +49,22 @@ public:
 
         if (type == INT_TYPE)
         {
-            std::cout << data.intValue << std::endl;
+            std::cout << data.intValue;
         }
         else if (type == BOOL_TYPE)
         {
             if (data.boolValue)
             {
-                std::cout << "true" << std::endl;
+                std::cout << "true";
             }
             else    
             {
-                std::cout << "false" << std::endl;
+                std::cout << "false";
             }
         }
         else if (type == FLOAT_TYPE)
         {
-            std::cout << data.floatValue << std::endl;
+            std::cout << data.floatValue;
         }
     }
     const DataType& operator +(DataType d) const

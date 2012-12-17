@@ -6,7 +6,9 @@
 #include <iostream>
 #include "data_type.h"
 
-extern std::map<std::string, DataType*> id;
+extern std::map<std::string, DataType> id;
+
+// #define PATH_LOGGING
 
 class Node 
 {

@@ -60,8 +60,8 @@
 %%
 
 STATEMENT_SEQUENCE:
-    STATEMENT {$$ = new StatementSequence($1);}
-    | STATEMENT_SEQUENCE ';' STATEMENT {$$ = new StatementSequence($3, $1);}
+    STATEMENT {$$ = new StatementSequence($1); $1->print(); std::cout << ";" << std::endl; $1->run();}
+    | STATEMENT_SEQUENCE ';' STATEMENT {$$ = new StatementSequence($3, $1); $3->print(); $3->print();}
     ;
 
 STATEMENT:

@@ -1,7 +1,7 @@
 #include "node.h"
 
 std::string typeName[4] = {"NO_TYPE", "INTEGER", "BOOLEAN", "FLOAT"};
-std::map<std::string, DataType*> id;
+std::map<std::string, DataType> id;
 
 
 /** Number **/
@@ -15,6 +15,9 @@ void Number::print()
 
 DataType Number::run()
 {
+#ifdef PATH_LOGGING
+    std::cerr << "Number::run" << std::endl;
+#endif
     return data;
 }
 
@@ -30,7 +33,10 @@ void Ident::print()
 
 DataType Ident::run()
 {
-    return *id[name];
+#ifdef PATH_LOGGING
+    std::cerr << "Ident::run" << std::endl;
+#endif
+    return id[name];
 }
 
 
@@ -50,6 +56,9 @@ void Selector::print()
 
 DataType Selector::run()
 {
+#ifdef PATH_LOGGING
+    std::cerr << "Selector::run" << std::endl;
+#endif
     if (exp == NULL)
     {
         return DataType();
@@ -116,6 +125,9 @@ void Factor::print()
 
 DataType Factor::run()
 {
+#ifdef PATH_LOGGING
+    std::cerr << "Factor::run" << std::endl;
+#endif
     if (type == FACTOR_IDENT)
     {
         if (selector == NULL)
@@ -155,6 +167,7 @@ void Term::print()
     }
     else
     {
+        std::cout << "(";
         term->print();
         if (type == TERM_MULT)
         {
@@ -173,11 +186,15 @@ void Term::print()
             std::cout << " AND ";
         }
         factor->print();
+        std::cout << ")";
     }
 }
 
 DataType Term::run()
 {
+#ifdef PATH_LOGGING
+    std::cerr << "Turn::run" << std::endl;
+#endif
     if (type == TERM_FACTOR)
     {
         return factor->run();
@@ -220,6 +237,7 @@ void SimpleExpression::print()
     }
     else
     {
+        std::cout << "(";
         simpleExpr->print();
         if (type == SIMPLE_EXPRESSION_PLUS)
         {
@@ -234,11 +252,15 @@ void SimpleExpression::print()
             std::cout << " OR ";
         }
         term->print();
+        std::cout << ")";
     }
 }
 
 DataType SimpleExpression::run()
 {
+#ifdef PATH_LOGGING
+    std::cerr << "SimpleExpression::run" << std::endl;
+#endif
     if (type == SIMPLE_EXPRESSION_LPLUS)
     {
         return term->run();
@@ -275,44 +297,59 @@ void Expression::print()
     }
     else if (type == EXPRESSION_EQ)
     {
+        std::cout << "(";
         expr1->print();
         std::cout << " = ";
         expr2->print();
+        std::cout << ")";
     }
     else if (type == EXPRESSION_NOTEQ)
     {
+        std::cout << "(";
         expr1->print();
         std::cout << " # ";
         expr2->print();
+        std::cout << ")";
     }
     else if (type == EXPRESSION_LS)
     {
+        std::cout << "(";
         expr1->print();
         std::cout << " < ";
         expr2->print();
+        std::cout << ")";
     }
     else if (type == EXPRESSION_LSEQ)
     {
+        std::cout << "(";
         expr1->print();
         std::cout << " <= ";
         expr2->print();
+        std::cout << ")";
     }
     else if (type == EXPRESSION_GR)
     {
+        std::cout << "(";
         expr1->print();
         std::cout << " > ";
         expr2->print();
+        std::cout << ")";
     }
     else if (type == EXPRESSION_GREQ)
     {
+        std::cout << "(";
         expr1->print();
         std::cout << " < ";
         expr2->print();
+        std::cout << ")";
     }
 }
 
 DataType Expression::run()
 {
+#ifdef PATH_LOGGING
+    std::cerr << "Expression::run" << std::endl;
+#endif
     if (type == EXPRESSION_SIMPLE)
     {
         return expr1->run();
@@ -346,22 +383,33 @@ DataType Expression::run()
 
 /** Assignment **/
 
-Assignment::Assignment(Ident* ident, Selector* selector, Expression* expr) {}
+Assignment::Assignment(Ident* ident, Selector* selector, Expression* expr)
+ : ident(ident), selector(selector), expr(expr) {}
 
 void Assignment::print()
 {
     ident->print();
-    selector->print();
+    if (selector != NULL)
+    {
+       selector->print();
+    }
     std::cout << " := ";
     expr->print();
 }
 
 DataType Assignment::run()
 {
+#ifdef PATH_LOGGING
+    std::cerr << "Assignment::run" << std::endl;
+#endif
     if (selector == NULL)
     {
-        *(id[ident->name]) = expr->run();
-        return *(id[ident->name]);
+        std::cerr << "Variable: " << ident->name << " is set with: ";
+        (expr->run()).print();
+        std::cerr << std::endl;
+
+        id[ident->name] = expr->run();
+        return id[ident->name];
     }
     else
     {
@@ -373,7 +421,7 @@ DataType Assignment::run()
 
 /** Statement **/
 
-Statement::Statement(Assignment* assignment) {}
+Statement::Statement(Assignment* assignment) : assignment(assignment) {}
 
 void Statement::print()
 {
@@ -382,6 +430,9 @@ void Statement::print()
 
 DataType Statement::run()
 {
+#ifdef PATH_LOGGING
+    std::cerr << "Statement::run" << std::endl;
+#endif
     assignment->run();
 }
 
@@ -400,13 +451,16 @@ void StatementSequence::print()
     else
     {
         statementSequence->print();
-        std::cout << " ; ";
+        std::cout << ";" << std::endl;
         statement->print();
     }
 }
 
 DataType StatementSequence::run()
 {
+#ifdef PATH_LOGGING
+    std::cerr << "StatementSequence::run" << std::endl;
+#endif
     if (statementSequence == NULL)
     {
         return statement->run();

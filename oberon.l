@@ -29,9 +29,9 @@ NUMBER {FLOAT}|{INTEGER}
 {FLOAT} { yylval.number_node = new Number(DataType::newFloat(atof(yytext))); return NUMBER; }
 {INTEGER} { yylval.number_node = new Number(DataType::newInteger(atoi(yytext))); return NUMBER; }
 
-[-+()~*&=\;\#\[\]\<\>\n] {return *yytext;}
+[-+()~*&=\;\#\[\]\<\>] {return *yytext;}
 
-[ \t] ;
+[ \t\n] ;
 
 . { yyerror("invalid character"); }
 
