@@ -1,4 +1,4 @@
 #!/bin/bash
 bison -vd oberon.y
 flex oberon.l
-g++ -o oberon lex.yy.c node.c oberon.tab.c -lfl 
+g++-4.8 -o oberon lex.yy.c data_type.cpp node.cpp oberon.tab.c -lfl 

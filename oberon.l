@@ -1,6 +1,6 @@
 %{
     #include <stdlib.h>
-    #include "node.h"
+    #include "node.hpp"
     #include "oberon.tab.h"
 
     void yyerror(char *);
@@ -52,6 +52,6 @@ NUMBER {FLOAT}|{INTEGER}
 
 [ \t\n] ;
 
-. { yyerror("invalid character"); }
+. { yyerror((char*)"invalid character"); }
 
 %%

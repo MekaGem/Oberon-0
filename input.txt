@@ -8,5 +8,6 @@ BEGIN
 	WHILE i < 10 DO
 		a := i;
 		i := i + 1
-	END
+	END;
+	a := 2
 END
