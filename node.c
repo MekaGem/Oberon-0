@@ -423,11 +423,21 @@ DataType Assignment::run(ArgumentList* arguments)
         {
             if (id.find(ident->name) == id.end())
             {
-                std::cerr << "There is no any ident with name \"" << ident->name << "\" in this scope" << std::endl;
+                std::cerr << "There is no any ident with name \"" 
+                    << ident->name << "\" in this scope" << std::endl;
                 exit(-1);
             }
             else
             {
+                if (id[ident->name].isConst)
+                {
+                    std::cerr << "Ident with name \"" << ident->name 
+                        << "\" is a const and can't be assigned" << std::endl;
+                    exit(-1);
+                }
+
+                int type = id[ident->name].type;
+
                 #ifdef PRINT_ASSIGNMENT
 
                 id[ident->name] = expr->run(arguments);
@@ -436,11 +446,28 @@ DataType Assignment::run(ArgumentList* arguments)
                 std::cerr << std::endl;
 
                 #endif
+
+                if (id[ident->name].type != type)
+                {
+                    std::cerr << typeName[type] << " can't be assigned with " 
+                        << typeName[id[ident->name].type] << std::endl;
+                    exit(-1);
+                }
+
                 return id[ident->name];
             }
         }
         else
         {
+            if ((*arguments)[ident->name].isConst)
+            {
+                std::cerr << "Ident with name \"" << ident->name 
+                    << "\" is a const and can't be assigned" << std::endl;
+                exit(-1);
+            }
+
+            int type = (*arguments)[ident->name].type;
+
             #ifdef PRINT_ASSIGNMENT
 
             (*arguments)[ident->name] = expr->run(arguments);
@@ -449,6 +476,14 @@ DataType Assignment::run(ArgumentList* arguments)
             std::cerr << std::endl;
 
             #endif  
+
+            if ((*arguments)[ident->name].type != type)
+            {
+                std::cerr << typeName[type] << " can't be assigned with " 
+                    << typeName[id[ident->name].type] << std::endl;
+                exit(-1);
+            }
+
             return arguments->at(ident->name);
         }
     }
@@ -798,6 +833,187 @@ DataType WhileStatement::run(ArgumentList* arguments)
         _do->run(arguments);
         res = _while->run(arguments);
     }
+
+    return DataType();
+}
+
+
+/** IdentList **/
+
+IdentList::IdentList(Ident* ident, IdentList* identList)
+ : ident(ident), identList(identList) {}
+
+void IdentList::print()
+{
+    if (identList != NULL)
+    {
+        identList->print();
+    }
+    std::cout << ", ";
+    ident->print();
+}
+
+DataType IdentList::run(ArgumentList* arguments)
+{
+    name.clear();
+    if (identList != NULL)
+    {
+        identList->run(arguments);
+        name = identList->name;
+    }
+    name.push_back(ident->name);
+
+    return DataType();
+}
+
+
+/** ConstDeclarations **/
+
+ConstDeclarations::ConstDeclarations(Ident* ident, Expression* expression, ConstDeclarations* constDec)
+ : ident(ident), expression(expression), constDec(constDec) {}
+
+void ConstDeclarations::print()
+{
+    if (constDec != NULL)
+    {
+        constDec->print();
+        std::cout << " ";
+    }
+    ident->print();
+    std::cout << " = ";
+    expression->print();
+    std::cout << ";";
+}
+
+DataType ConstDeclarations::run(ArgumentList* arguments)
+{
+    name.clear();
+    constValue.clear();
+    if (constDec != NULL)
+    {
+        constDec->run(arguments);
+        name = constDec->name;
+        constValue = constDec->constValue;
+    }
+
+    name.push_back(ident->name);
+    constValue.push_back(expression->run(arguments));
+
+    return DataType();
+}
+
+
+/** Type **/
+
+Type::Type(int type, Expression* expression)
+ : type(type), expression(expression) {}
+
+void Type::print()
+{
+    if (expression != NULL)
+    {
+        std::cout << "ARRAY ";
+        expression->print();
+        std::cout << " OF ";
+    }
+    std::cout << typeName[type];
+}
+
+DataType Type::run(ArgumentList* arguments)
+{
+    if (expression == NULL)
+    {
+        return DataType();
+    }
+    else
+    {
+        return expression->run(arguments);
+    }
+}
+
+
+/** VarDeclarations **/
+
+VarDeclarations::VarDeclarations(IdentList* identList, Type* type, VarDeclarations* varDec)
+ : identList(identList), type(type), varDec(varDec) {}
+
+void VarDeclarations::print()
+{
+    if (varDec != NULL)
+    {
+        varDec->print();
+        std::cout << " ";
+    }
+    identList->print();
+    std::cout << " : ";
+    type->print();
+    std::cout << ";";
+}
+
+DataType VarDeclarations::run(ArgumentList* arguments)
+{
+    name.clear();
+    initValue.clear();
+    if (varDec != NULL)
+    {
+        varDec->run(arguments);
+        name = varDec->name;
+        initValue = varDec->initValue;
+    }
+
+    identList->run();
+
+    for (size_t index = 0; index < identList->name.size(); ++index)
+    {
+        name.push_back(identList->name[index]);
+        if (identList->type == INT_TYPE)
+        {
+            initValue.push_back(DataType::newInteger(0));
+        }
+        else if (identList->type == BOOL_TYPE)
+        {
+            initValue.push_back(DataType::newBoolean(0));   
+        }
+        else if (identList->type == BOOL_FLOAT)
+        {
+            initValue.push_back(DataType::newFloat(0));   
+        }
+    }
+
+    return DataType();
+}
+
+
+/** Declarations **/
+
+Declarations::Declarations(ConstDeclarations* constDec, VarDeclarations* varDec)
+ : constDec(constDec), varDec(varDec) {}
+
+void Declarations::print()
+{
+    constDec->print();
+    std::cout << std::endl;
+    varDec->print();
+}
+
+DataType Declarations::run(ArgumentList* arguments)
+{
+    constDec->run();
+    varDec->run();
+
+    if (arguments == NULL)
+    {
+        std::cerr << "ArgumentList is unavaliable, so initialization can't be finished" << std::endl;
+        exit(-1);
+    }
+
+    std::vector<std::string> name;
+    std::vector<DataType> value;
+
+    for ()
+
+    for (size_t index = 0; index < constDec)
+    (*arguments)[]
 
     return DataType();
 }

@@ -35,6 +35,9 @@ class ProcedureCall;
 class IFBody;
 class IFStatement;
 class WhileStatement;
+class IdentList;
+class ConstDeclarations;
+class Declarations;
 
 class Number : public Node
 {
@@ -244,4 +247,72 @@ public:
 
     Expression* _while;
     StatementSequence* _do;
+};
+
+class IdentList : public Node
+{
+public:
+    IdentList(Ident* ident, IdentList* identList = NULL);
+    virtual void print();
+    virtual DataType run(ArgumentList* arguments = NULL);
+
+    Ident* ident;
+    IdentList* identList;
+    
+    std::vector<std::string> name;
+};
+
+class ConstDeclarations : public Node
+{
+public:
+    ConstDeclarations(Ident* ident, Expression* expression, ConstDeclarations* constDec = NULL);
+    virtual void print();
+    virtual DataType run(ArgumentList* arguments = NULL);
+
+    Ident* ident;
+    Expression* expression;
+    ConstDeclarations* constDec;
+
+    std::vector<std::string> name;
+    std::vector<DataType> constValue;
+};
+
+class Type : public Node
+{
+public:
+    Type(int type, Expression* expression = NULL);
+    virtual void print();
+    virtual DataType run(ArgumentList* arguments = NULL);
+
+    int type;
+    Expression* expression;
+};
+
+class VarDeclarations : public Node
+{
+public:
+    VarDeclarations(IdentList* identList, Type* type, VarDeclarations* varDec = NULL);
+    virtual void print();
+    virtual DataType run(ArgumentList* arguments = NULL);
+
+    IdentList* identList;
+    Type* type;
+    VarDeclarations* varDec;
+
+    std::vector<std::string> name;
+    std::vector<DataType> initValue;
+};
+
+class Declarations : public Node
+{
+public:
+    Declarations(ConstDeclarations* constDec, VarDeclarations* varDec);
+    virtual void print();
+    virtual DataType run(ArgumentList* arguments = NULL);
+
+    ConstDeclarations* constDec;
+    VarDeclarations* varDec;
+
+    std::vector<std::string> name;
+    std::vector<DataType> initValue;
 };

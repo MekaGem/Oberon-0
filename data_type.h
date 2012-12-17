@@ -16,27 +16,31 @@ class DataType
 public:
     DataType()
     {
+        isConst = true;
         type = NO_TYPE;
     }
-    static const DataType& newInteger(int value)
+    static const DataType& newInteger(int value, bool isConst = false)
     {
         DataType *res = new DataType();
         res->type = INT_TYPE;
         res->data.intValue = value;
+        res->isConst = isConst;
         return *res;
     }
-    static const DataType& newBoolean(bool value)
+    static const DataType& newBoolean(bool value, bool isConst = false)
     {
         DataType *res = new DataType();
         res->type = BOOL_TYPE;
         res->data.boolValue = value;
+        res->isConst = isConst;
         return *res;
     }
-    static const DataType& newFloat(float value)
+    static const DataType& newFloat(float value, bool isConst = false)
     {
         DataType *res = new DataType();
         res->type = FLOAT_TYPE;
         res->data.floatValue = value;
+        res->isConst = isConst;
         return *res;
     }
     void print() const
@@ -328,6 +332,7 @@ public:
         float floatValue;
     } data;
     int type;
+    bool isConst;
 
 private:
     void wrongDataTypeError(int type1 = NO_TYPE, int type2 = NO_TYPE) const
