@@ -35,6 +35,9 @@ NUMBER {FLOAT}|{INTEGER}
 "TYPE" {return _TYPE;}
 "VAR" {return _VAR;}
 
+"ARRAY" {return _ARRAY;}
+"OF" {return _OF;}
+
 "BEGIN" {return _BEGIN;}
 "WHILE" {return _WHILE;}
 "DO" {return _DO;}
@@ -42,6 +45,12 @@ NUMBER {FLOAT}|{INTEGER}
 "INTEGER" {return _INTEGER;}
 "BOOLEAN" {return _BOOLEAN;}
 "FLOAT" {return _FLOAT;}
+"STRING" {return _STRING;}
+
+"true"|"True"|"TRUE" { yylval.number_node = new Number(DataType::newBoolean(true)); return NUMBER; }
+"false"|"False"|"FALSE" { yylval.number_node = new Number(DataType::newBoolean(false)); return NUMBER; }
+
+"\""([^\"])*"\"" { std::string s(yytext); s = s.substr(1, s.size() - 2); yylval.number_node = new Number(DataType::newString(s)); return NUMBER; }
 
 {IDENT} { yylval.ident_node = new Ident(yytext); return IDENT; }
 

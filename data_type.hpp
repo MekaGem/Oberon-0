@@ -1,8 +1,9 @@
 #pragma once
 
 #include <map>
-#include <cstdlib>
 #include <string>
+#include <vector>
+#include <cstdlib>
 #include <iostream>
 
 const int NO_TYPE = 0;
@@ -11,7 +12,7 @@ const int BOOL_TYPE = 2;
 const int FLOAT_TYPE = 3;
 const int STRING_TYPE = 4;
 
-const int LAST_NUMERIC_TYPE = STRING_TYPE;
+const int LAST_TRIVIAL_TYPE = STRING_TYPE;
 const int MAX_TYPES_NUM = 5;
 
 extern std::string typeName[];
@@ -23,8 +24,11 @@ public:
     static const DataType& newInteger(int value, bool isConst = false);
     static const DataType& newBoolean(bool value, bool isConst = false);
     static const DataType& newFloat(float value, bool isConst = false);
-    //static const DataType& newString(const std::string &value, bool isConst = false);
+    static const DataType& newString(const std::string &value, bool isConst = false);
+    static const DataType& newArray(int type, const DataType& size);
+    DataType& operator [](const DataType& index) const;
     void print() const;
+
     const DataType& operator +(const DataType& d) const;
     const DataType& operator -(const DataType& d) const;
     const DataType& operator *(const DataType& d) const;
@@ -50,7 +54,7 @@ public:
         bool boolValue;
         float floatValue;
     } data;
-    std::vector<Data>* array;
+    std::vector<DataType>* array;
     std::string* stringValue;
 
     int type;

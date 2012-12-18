@@ -424,6 +424,13 @@ DataType Assignment::run(ArgumentList* arguments)
 
     if (selector == NULL)
     {
+        if ((*arguments)[ident->name].isArray)
+        {
+            std::cerr << "Ident with name \"" << ident->name 
+                << "\" is an ARRAY and can't be assigned" << std::endl;
+            exit(-1);
+        }
+
         if ((*arguments)[ident->name].isConst)
         {
             std::cerr << "Ident with name \"" << ident->name 
@@ -444,18 +451,42 @@ DataType Assignment::run(ArgumentList* arguments)
 
         (*arguments)[ident->name] = data;
         std::cerr << "Variable: " << ident->name << " is set with: ";
-        arguments->at(ident->name).print();
+        data.print();
         std::cerr << std::endl;
 
         #endif  
 
-        return arguments->at(ident->name);
+        return DataType();
     }
     else
     {
-        
-        std::cerr << "Arrays are not ready now!" << std::endl;
-        exit(-1);
+        DataType index = selector->run();
+        if (((*arguments)[ident->name])[index].isConst)
+        {
+            std::cerr << "Ident with name \"" << ident->name 
+                << "\" is a const and can't be assigned" << std::endl;
+            exit(-1);
+        }
+
+        DataType data = expr->run(arguments);
+
+        if (((*arguments)[ident->name])[index].type != data.type)
+        {
+            std::cerr << typeName[((*arguments)[ident->name])[index].type] << " can't be assigned with " 
+                << typeName[data.type] << std::endl;
+            exit(-1);
+        }
+
+        #ifdef PRINT_ASSIGNMENT
+
+        ((*arguments)[ident->name])[index] = data;
+        std::cerr << "Variable: " << ident->name << "[" << index.data.intValue << "] is set with: ";
+        data.print();
+        std::cerr << std::endl;
+
+        #endif  
+
+        return DataType();
     }
 }
 
@@ -947,17 +978,29 @@ DataType VarDeclarations::run(ArgumentList* arguments)
     for (size_t index = 0; index < identList->name.size(); ++index)
     {
         name.push_back(identList->name[index]);
-        if (type->type == INT_TYPE)
+        if (type->expression == NULL) 
         {
-            initValue.push_back(DataType::newInteger(0));
+            if (type->type == INT_TYPE)
+            {
+                initValue.push_back(DataType::newInteger(0));
+            }
+            else if (type->type == BOOL_TYPE)
+            {
+                initValue.push_back(DataType::newBoolean(0));   
+            }
+            else if (type->type == FLOAT_TYPE)
+            {
+                initValue.push_back(DataType::newFloat(0));   
+            }
+            else if (type->type == STRING_TYPE)
+            {
+                initValue.push_back(DataType::newString(""));      
+            }
         }
-        else if (type->type == BOOL_TYPE)
+        else
         {
-            initValue.push_back(DataType::newBoolean(0));   
-        }
-        else if (type->type == FLOAT_TYPE)
-        {
-            initValue.push_back(DataType::newFloat(0));   
+            DataType size = type->expression->run();
+            initValue.push_back(DataType::newArray(type->type, size));
         }
     }
 

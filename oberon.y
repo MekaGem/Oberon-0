@@ -53,10 +53,13 @@
 %token _CONST
 %token _TYPE
 %token _VAR
+%token _ARRAY
+%token _OF
 
 %token _INTEGER
 %token _BOOLEAN
 %token _FLOAT
+%token _STRING
 
 %left ','
 %left '+'
@@ -128,6 +131,11 @@ TYPE:
     _INTEGER {$$ = new Type(INT_TYPE);}
     | _BOOLEAN {$$ = new Type(BOOL_TYPE);}
     | _FLOAT {$$ = new Type(FLOAT_TYPE);}
+    | _STRING {$$ = new Type(STRING_TYPE);}
+    | _ARRAY EXPRESSION _OF _INTEGER {$$ = new Type(INT_TYPE, $2);}
+    | _ARRAY EXPRESSION _OF _BOOLEAN {$$ = new Type(BOOL_TYPE, $2);}
+    | _ARRAY EXPRESSION _OF _FLOAT {$$ = new Type(FLOAT_TYPE, $2);}
+    | _ARRAY EXPRESSION _OF _STRING {$$ = new Type(STRING_TYPE, $2);}
     ;
 
 CONST_DECLARATIONS:

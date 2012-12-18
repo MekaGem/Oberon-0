@@ -1,13 +1,18 @@
 MODULE Main;
 	VAR a, i : INTEGER;
 	c : INTEGER;
+	s : STRING;
+	arr : ARRAY 10 OF INTEGER;
 BEGIN
 	a := 0;
 	i := 0;
+	s := "Hello";
 
 	WHILE i < 10 DO
 		a := i;
 		i := i + 1
 	END;
-	a := 2
+	a := 2;
+	s := s + ", world!";
+	arr[10] := 3
 END
