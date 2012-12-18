@@ -149,8 +149,7 @@ DataType Factor::run(ArgumentList* arguments)
         }   
         else
         {
-            std::cerr << "Arrays are not ready now!" << std::endl;
-            exit(-1);
+            return (factor.ident->run(arguments))[selector->run(arguments)];
         }
     }
     else if (type == FACTOR_NUMBER)
@@ -447,9 +446,10 @@ DataType Assignment::run(ArgumentList* arguments)
             exit(-1);
         }
 
+        (*arguments)[ident->name] = data;
+
         #ifdef PRINT_ASSIGNMENT
 
-        (*arguments)[ident->name] = data;
         std::cerr << "Variable: " << ident->name << " is set with: ";
         data.print();
         std::cerr << std::endl;
@@ -460,7 +460,7 @@ DataType Assignment::run(ArgumentList* arguments)
     }
     else
     {
-        DataType index = selector->run();
+        DataType index = selector->run(arguments);
         if (((*arguments)[ident->name])[index].isConst)
         {
             std::cerr << "Ident with name \"" << ident->name 
@@ -477,9 +477,10 @@ DataType Assignment::run(ArgumentList* arguments)
             exit(-1);
         }
 
+        ((*arguments)[ident->name])[index] = data;
+
         #ifdef PRINT_ASSIGNMENT
 
-        ((*arguments)[ident->name])[index] = data;
         std::cerr << "Variable: " << ident->name << "[" << index.data.intValue << "] is set with: ";
         data.print();
         std::cerr << std::endl;
@@ -516,7 +517,30 @@ Statement* Statement::newWhileStatement(WhileStatement* whileStatement)
     Statement* statement = new Statement();
     statement->type = STATEMENT_WHILE;
     statement->statement.whileStatement = whileStatement;
-    return statement;   
+    return statement;
+}
+
+Statement* Statement::newWriteStatement(Expression* expression)
+{
+    Statement* statement = new Statement();
+    statement->type = STATEMENT_WRITE;
+    statement->statement.writeExpression = expression;
+    return statement;
+}
+
+Statement* Statement::newWriteLnStatement()
+{
+    Statement* statement = new Statement();
+    statement->type = STATEMENT_WRITELN;
+    return statement;
+}
+
+Statement* Statement::newReadStatement(Factor* factor)
+{
+    Statement* statement = new Statement();
+    statement->type = STATEMENT_READ;
+    statement->statement.readFactor = factor;
+    return statement;
 }
 
 void Statement::print()
@@ -532,6 +556,22 @@ void Statement::print()
     else if (type == STATEMENT_WHILE)
     {
         statement.whileStatement->print();   
+    }
+    else if (type == STATEMENT_WRITE)
+    {
+        std::cout << "Write(";
+        statement.writeExpression->print();
+        std::cout << ")";
+    }
+    else if (type == STATEMENT_WRITELN)
+    {
+        std::cout << "WriteLn";
+    }
+    else if (type == STATEMENT_READ)
+    {
+        std::cout << "READ(";
+        statement.readFactor->print();
+        std::cout << ")";
     }
 }
 
@@ -551,6 +591,92 @@ DataType Statement::run(ArgumentList* arguments)
     else if (type == STATEMENT_WHILE)
     {
         statement.whileStatement->run(arguments);
+    }
+    else if (type == STATEMENT_WRITE)
+    {
+        statement.writeExpression->run(arguments).print();
+        std::cout << " ";
+    }
+    else if (type == STATEMENT_WRITELN)
+    {
+        std::cout << std::endl;
+    }
+    else if (type == STATEMENT_READ)
+    {
+        if (statement.readFactor->type != Factor::FACTOR_IDENT)
+        {
+            std::cerr << "Bad factor in Read()" << std::endl;
+            exit(-1);
+        }
+
+        std::string name = statement.readFactor->factor.ident->name;
+        if (arguments->find(name) == arguments->end())
+        {
+            std::cerr << "No such ident in context for calling Read()" << std::endl;
+            exit(-1);
+        }
+
+        int type = (*arguments)[name].type;
+        DataType data;
+
+        if (type == NO_TYPE)
+        {
+            std::cerr << "Can't read NO_TYPE" << std::endl;
+            exit(-1);
+        }
+        else if (type == INT_TYPE)
+        {
+            int value;
+            std::cin >> value;
+            data = DataType::newInteger(value);
+        }
+        else if (type == BOOL_TYPE)
+        {
+            std::string s;
+            std::cin >> s;
+            bool value = false;
+
+            if (s == "true" || s == "True" || s == "TRUE")
+            {
+                value = true;
+            }
+            else if (s == "false" || s == "False" || s == "FALSE")
+            {
+                value = false;
+            }   
+            else
+            {
+                std::cerr << "Wrong boolean value" << std::endl;
+                exit(-1);
+            }
+
+            data = DataType::newBoolean(value);
+        }
+        else if (type == FLOAT_TYPE)
+        {
+            float value;
+            std::cin >> value;
+            data = DataType::newFloat(value);
+        }
+        else if (type == STRING_TYPE)
+        {
+            std::string value;
+            std::cin >> value;
+            data = DataType::newString(value);
+        }
+
+        if (statement.readFactor->selector != NULL)
+        {
+            DataType index;
+            index = statement.readFactor->selector->run(arguments);
+
+            ((*arguments)[name])[index] = data;
+        }
+        else
+        {
+            (*arguments)[name] = data;
+        }
+        return DataType();
     }
 }
 
@@ -999,7 +1125,7 @@ DataType VarDeclarations::run(ArgumentList* arguments)
         }
         else
         {
-            DataType size = type->expression->run();
+            DataType size = type->expression->run(arguments);
             initValue.push_back(DataType::newArray(type->type, size));
         }
     }

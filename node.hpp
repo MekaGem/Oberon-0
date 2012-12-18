@@ -11,7 +11,7 @@
 typedef std::map<std::string, DataType> ArgumentList;
 
 // #define PATH_LOGGING
-#define PRINT_ASSIGNMENT
+// #define PRINT_ASSIGNMENT
 
 class Node 
 {
@@ -163,6 +163,9 @@ public:
     static Statement* newAssignmentStatement(Assignment* assignment);
     static Statement* newIFStatement(IFStatement* ifstatement);
     static Statement* newWhileStatement(WhileStatement* whileStatement);
+    static Statement* newWriteStatement(Expression* expression);
+    static Statement* newWriteLnStatement();
+    static Statement* newReadStatement(Factor* factor);
     virtual void print();
     virtual DataType run(ArgumentList* arguments = NULL);
 
@@ -172,11 +175,17 @@ public:
         Assignment* assignment;
         IFStatement* ifstatement;
         WhileStatement* whileStatement;
+
+        Expression* writeExpression;
+        Factor* readFactor;
     } statement;
     static const int STATEMENT_ASSIGN = 1;
     static const int STATEMENT_CALL = 2;
     static const int STATEMENT_IF = 3;
     static const int STATEMENT_WHILE = 4;
+    static const int STATEMENT_WRITE = 5;
+    static const int STATEMENT_WRITELN = 6;
+    static const int STATEMENT_READ = 7;
 };
 
 class StatementSequence : public Node

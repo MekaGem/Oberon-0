@@ -42,6 +42,10 @@ NUMBER {FLOAT}|{INTEGER}
 "WHILE" {return _WHILE;}
 "DO" {return _DO;}
 
+"Write" {return _WRITE;}
+"WriteLn" {return _WRITELN;}
+"Read" {return _READ;}
+
 "INTEGER" {return _INTEGER;}
 "BOOLEAN" {return _BOOLEAN;}
 "FLOAT" {return _FLOAT;}

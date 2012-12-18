@@ -98,40 +98,56 @@ DataType& DataType::operator [](const DataType& index) const
         std::cerr << "ARRAY index is out of bound" << std::endl;
         exit(-1);
     }
-    
+
     return array->at(index.data.intValue);
 }
 
 void DataType::print() const
 {
-    if (type == NO_TYPE)
+    if (isArray)
     {
-        std::cerr << "No type to print." << std::endl;
-        exit(-1);
+        std::cout << "{";
+        for (size_t index = 0; index < array->size(); ++index)
+        {
+            if (index > 0)
+            {
+                std::cout << ", ";
+            }
+            array->at(index).print();
+        }
+        std::cout << "}";
     }
+    else
+    {
+        if (type == NO_TYPE)
+        {
+            std::cerr << "No type to print." << std::endl;
+            exit(-1);
+        }
 
-    if (type == INT_TYPE)
-    {
-        std::cout << data.intValue;
-    }
-    else if (type == BOOL_TYPE)
-    {
-        if (data.boolValue)
+        if (type == INT_TYPE)
         {
-            std::cout << "true";
+            std::cout << data.intValue;
         }
-        else    
+        else if (type == BOOL_TYPE)
         {
-            std::cout << "false";
+            if (data.boolValue)
+            {
+                std::cout << "true";
+            }
+            else    
+            {
+                std::cout << "false";
+            }
         }
-    }
-    else if (type == FLOAT_TYPE)
-    {
-        std::cout << data.floatValue;
-    }
-    else if (type == STRING_TYPE)
-    {
-        std::cout << (*stringValue);
+        else if (type == FLOAT_TYPE)
+        {
+            std::cout << data.floatValue;
+        }
+        else if (type == STRING_TYPE)
+        {
+            std::cout << (*stringValue);
+        }
     }
 }
 const DataType& DataType::operator +(const DataType& d) const

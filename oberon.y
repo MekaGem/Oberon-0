@@ -5,6 +5,7 @@
 
     void yyerror(char *);
     int yylex(void);
+    extern FILE* yyin;
 %}
 
 %union
@@ -60,6 +61,10 @@
 %token _BOOLEAN
 %token _FLOAT
 %token _STRING
+
+%token _WRITE
+%token _WRITELN
+%token _READ
 
 %left ','
 %left '+'
@@ -152,6 +157,9 @@ STATEMENT:
     ASSIGNMENT {$$ = Statement::newAssignmentStatement($1);}
     | IFSTATEMENT {$$ = Statement::newIFStatement($1);}
     | WHILE_STATEMENT {$$ = Statement::newWhileStatement($1);}
+    | _WRITE '(' EXPRESSION ')' {$$ = Statement::newWriteStatement($3);}
+    | _WRITELN {$$ = Statement::newWriteLnStatement();}
+    | _READ '(' FACTOR ')' {$$ = Statement::newReadStatement($3);}
     ;
 
 WHILE_STATEMENT:
@@ -218,12 +226,26 @@ SELECTOR:
 
 %%
 
-void yyerror(char *s) {
+void yyerror(char *s) 
+{
     fprintf(stderr, "Error: %s\n", s);
 }
 
-int main(void) {
-    freopen("input.txt", "r", stdin);
+int main(int argc, char **argv)
+{
+    FILE* inputFile = NULL;
+    if (argc > 1)
+    {
+        inputFile = fopen(argv[1], "r");
+    }
+
+    if (inputFile == NULL)
+    {
+        std::cerr << "Can't open input file" << std::endl;
+        return(-1);
+    }
+    yyin = inputFile;
+
     // freopen("log.txt", "w", stderr);
     yyparse();
     return 0;
