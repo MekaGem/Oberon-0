@@ -1,7 +1,6 @@
 #include "node.hpp"
 
-// std::map<std::string, DataType> id;
-
+std::map<std::string, Procedure*> procedures;
 
 /** Number **/
 
@@ -195,7 +194,7 @@ void Term::print()
         }
         else if (type == TERM_AND)
         {
-            std::cout << " AND ";
+            std::cout << " & ";
         }
         factor->print();
         std::cout << ")";
@@ -217,11 +216,11 @@ DataType Term::run(ArgumentList* arguments)
     }
     else if (type == TERM_DIV)
     {
-        return term->run(arguments) * factor->run(arguments);
+        return term->run(arguments) / factor->run(arguments);
     }
     else if (type == TERM_MOD)
     {
-        return term->run(arguments) / factor->run(arguments);
+        return term->run(arguments) % factor->run(arguments);
     }
     else if (type == TERM_AND)
     {
@@ -237,7 +236,11 @@ SimpleExpression::SimpleExpression(int type, Term* term, SimpleExpression* simpl
 
 void SimpleExpression::print()
 {
-    if (type == SIMPLE_EXPRESSION_LPLUS)
+    if (type == SIMPLE_EXPRESSION_TERM)
+    {
+        term->print();
+    }
+    else if (type == SIMPLE_EXPRESSION_LPLUS)
     {
         std::cout << "+";
         term->print();
@@ -273,7 +276,11 @@ DataType SimpleExpression::run(ArgumentList* arguments)
 #ifdef PATH_LOGGING
     std::cerr << "SimpleExpression::run" << std::endl;
 #endif
-    if (type == SIMPLE_EXPRESSION_LPLUS)
+    if (type == SIMPLE_EXPRESSION_TERM)
+    {
+        return term->run(arguments);
+    }
+    else if (type == SIMPLE_EXPRESSION_LPLUS)
     {
         return term->run(arguments);
     }
@@ -299,7 +306,10 @@ DataType SimpleExpression::run(ArgumentList* arguments)
 /** Expression **/
 
 Expression::Expression(int type, SimpleExpression* expr1, SimpleExpression* expr2)
- : type(type), expr1(expr1), expr2(expr2) {}
+ : type(type), expr1(expr1), expr2(expr2), ident(NULL) {}
+
+Expression::Expression(Ident* ident)
+ : type(EXPRESSION_IDENT), expr1(NULL), expr2(NULL), ident(ident) {}
 
 void Expression::print()
 {
@@ -355,6 +365,10 @@ void Expression::print()
         expr2->print();
         std::cout << ")";
     }
+    else if (type == EXPRESSION_IDENT)
+    {
+        ident->print();
+    }
 }
 
 DataType Expression::run(ArgumentList* arguments)
@@ -389,6 +403,10 @@ DataType Expression::run(ArgumentList* arguments)
     else if (type == EXPRESSION_GREQ)
     {
         return expr1->run(arguments) >= expr2->run(arguments);
+    }
+    else if (type == EXPRESSION_IDENT)
+    {
+        return ident->run(arguments);
     }
 }
 
@@ -504,6 +522,14 @@ Statement* Statement::newAssignmentStatement(Assignment* assignment)
     return statement;
 }
 
+Statement* Statement::newProcedureCallStatement(ProcedureCall* procedureCall)
+{   
+    Statement* statement = new Statement();
+    statement->type = STATEMENT_CALL;
+    statement->statement.procedureCall = procedureCall;
+    return statement;
+}
+
 Statement* Statement::newIFStatement(IFStatement* ifstatement)
 {
     Statement* statement = new Statement();
@@ -549,6 +575,10 @@ void Statement::print()
     {
         statement.assignment->print();
     }
+    else if (type == STATEMENT_CALL)
+    {
+        statement.procedureCall->print();
+    }
     else if (type == STATEMENT_IF)
     {
         statement.ifstatement->print();
@@ -583,6 +613,10 @@ DataType Statement::run(ArgumentList* arguments)
     if (type == STATEMENT_ASSIGN)
     {
         return statement.assignment->run(arguments);
+    }
+    else if (type == STATEMENT_CALL)
+    {
+        return statement.procedureCall->run(arguments);
     }
     else if (type == STATEMENT_IF)
     {
@@ -742,16 +776,44 @@ DataType ActualParameters::run(ArgumentList* arguments)
     std::cerr << "ActualParameters::run" << std::endl;
 #endif
     params.clear();
-    if (actualParameters == NULL)
-    {
-        params.push_back(expression->run(arguments));
-    }
-    else
+    isIdent.clear();
+    identName.clear();
+    if (actualParameters != NULL)
     {
         actualParameters->run(arguments);
         params = actualParameters->params;
-        params.push_back(expression->run(arguments));
+        isIdent = actualParameters->isIdent;
+        identName = actualParameters->identName;
     }
+
+    SimpleExpression* se;
+    Term* t;
+    Factor* f;
+
+    bool isident = false;
+    std::string iname = "";
+
+    if (expression->type == Expression::EXPRESSION_SIMPLE)
+    {
+        se = expression->expr1;
+        if (se->type == SimpleExpression::SIMPLE_EXPRESSION_TERM)
+        {
+            t = se->term;
+            if (t->type == Term::TERM_FACTOR)
+            {
+                f = t->factor;
+                if (f->type == Factor::FACTOR_IDENT)
+                {
+                    isident = true;
+                    iname = f->factor.ident->name;
+                }
+            }
+        }
+    }
+        
+    isIdent.push_back(isident);
+    identName.push_back(iname);
+    params.push_back(expression->run(arguments));
 
     return DataType();
 }
@@ -778,40 +840,13 @@ DataType ProcedureCall::run(ArgumentList* arguments)
 #ifdef PATH_LOGGING
     std::cerr << "ProcedureCall::run" << std::endl;
 #endif
-   /* if (ident->name == "Write")
+    if (procedures.find(ident->name) == procedures.end())
     {
-        if (actualParameters == NULL)
-        {
-            std::cerr << "Write procedure needs at least one parameter" << std::endl;
-            exit(-1);
-        }
-
-        actualParameters->run(arguments);
-        std::vector<DataType> params = actualParameters->params;
-
-        for (size_t index = 0; index < params.size(); ++index)
-        {
-            params[i].print();
-            std::cout << " ";
-        }
+        std::cerr << "No such function called \"" << ident->name << "\"" << std::endl;
+        exit(-1);
     }
-    else if (ident->name == "Ololo")
-    {
-        if (actualParameters == NULL)
-        {
-            std::cerr << "Write procedure needs at least one parameter" << std::endl;
-            exit(-1);
-        }
 
-        actualParameters->run(arguments);
-        std::vector<DataType> params = actualParameters->params;
-
-        for (size_t index = 0; index < params.size(); ++index)
-        {
-            params[i].print();
-            std::cout << " ";
-        }
-    }*/
+    procedures[ident->name]->call(arguments, actualParameters);
 
     return DataType();
 }
@@ -850,13 +885,13 @@ DataType IFBody::run(ArgumentList* arguments)
     if (res.data.boolValue)
     {
         _then->run(arguments);
-        return res;
+        return DataType::newBoolean(true);
     }
     else
     {
         if (body == NULL)
         {
-            return ~res;
+            return DataType::newBoolean(false);
         }
         else
         {
@@ -905,12 +940,14 @@ DataType IFStatement::run(ArgumentList* arguments)
 
     if (res.data.boolValue)
     {
+        // std::cout << "IF statement : then" << std::endl;
         _then->run(arguments);
-        return res;
+        return DataType::newBoolean(true);
     }
 
     if (body != NULL)
     {
+        // std::cout << "IF statement : body" << std::endl;
         res = body->run(arguments);
         if (res.data.boolValue)
         {
@@ -920,10 +957,11 @@ DataType IFStatement::run(ArgumentList* arguments)
 
     if (_else != NULL)
     {
-        _else->run(arguments);
+        // std::cout << "IF statement : else" << std::endl;
+        return _else->run(arguments);
     }
 
-    return DataType();
+    return DataType::newBoolean(false);
 }
 
 
@@ -1205,5 +1243,267 @@ DataType Declarations::run(ArgumentList* arguments)
         (*arguments)[name[index]] = value[index];
     }
 
+    return DataType();
+}
+
+
+/** FPSection **/
+
+FPSection::FPSection(bool IsVar, IdentList* identList, Type* type, FPSection* section)
+ : IsVar(IsVar), identList(identList), type(type), section(section) 
+{
+    params.clear();
+    isVar.clear();
+    types.clear();
+    if (section != NULL)
+    {
+        params = section->params;
+        isVar = section->isVar;
+        types = section->types;
+    }
+
+    identList->run(NULL);
+    for (size_t index = 0; index < identList->name.size(); ++index)
+    {
+        isVar.push_back(IsVar);
+        params.push_back(identList->name[index]);
+        types.push_back(type);
+    }
+}
+
+void FPSection::print()
+{
+    if (section != NULL)
+    {
+        section->print();
+        std::cout << "; ";
+    }
+
+    if (IsVar)
+    {
+        std::cout << "VAR ";
+    }
+
+    identList->print();
+    std::cout << " : ";
+    type->print();
+}
+
+DataType FPSection::run(ArgumentList* arguments)
+{
+    return DataType();
+}
+
+
+/** FormalParameters **/
+
+FormalParameters::FormalParameters(FPSection* section)
+ : section(section) {
+    params.clear();
+    isVar.clear();
+    types.clear();
+    if (section != NULL)
+    {
+        params = section->params;
+        isVar = section->isVar;    
+        types = section->types;
+    }
+}
+
+void FormalParameters::print()
+{
+    std::cout << "(";
+    if (section != NULL)
+    {
+        section->print();
+    }
+    std::cout << ")";
+}
+
+DataType FormalParameters::run(ArgumentList* arguments)
+{
+    return DataType();
+}
+
+
+/** ProcedureHead **/
+
+ProcedureHead::ProcedureHead(Ident* name, FormalParameters* formalParams)
+ : name(name), formalParams(formalParams)
+{
+    params.clear();
+    isVar.clear();
+    types.clear();
+    if (formalParams != NULL)
+    {
+        params = formalParams->params;
+        isVar = formalParams->isVar;    
+        types = formalParams->types;
+    }
+}
+
+void ProcedureHead::print()
+{
+    std::cout << "PROCEDURE ";
+    name->print();
+
+    if (formalParams != NULL)
+    {
+        std::cout << " ";
+        formalParams->print();
+    }
+}
+
+DataType ProcedureHead::run(ArgumentList* arguments)
+{
+    return DataType();
+}
+
+
+/** ProcedureBody **/
+
+ProcedureBody::ProcedureBody(Declarations* dec, StatementSequence* statementSequence)
+ : dec(dec), statementSequence(statementSequence) {}
+
+void ProcedureBody::print()
+{
+    dec->print();
+    if (statementSequence != NULL)
+    {
+        std::cout << " ";
+        statementSequence->print();
+    }
+    std::cout << " END";
+}
+
+DataType ProcedureBody::run(ArgumentList* arguments)
+{
+    if (statementSequence == NULL)
+    {
+        return DataType();
+    }
+    else
+    {
+        return statementSequence->run(arguments);
+    }
+}
+
+
+/** Procedure **/
+
+Procedure::Procedure(ProcedureHead* head, ProcedureBody* body, Ident* name)
+ : head(head), body(body), name(name)
+{
+    dec = body->dec;
+
+    params.clear();
+    isVar.clear();
+    types.clear();
+    if (head != NULL)
+    {
+        params = head->params;
+        isVar = head->isVar;    
+        types = head->types;
+    }
+
+    procedures[name->name] = this;
+}
+
+void Procedure::print()
+{
+    head->print();
+    std::cout << " ; ";
+    body->print();
+    std::cout << " ";
+    name->print();
+}
+
+DataType Procedure::run(ArgumentList* arguments)
+{
+    return DataType();
+}
+
+DataType Procedure::call(ArgumentList* arguments, ActualParameters* actualParameters)
+{
+    ArgumentList* localArguments = new ArgumentList;
+    dec->run(localArguments);
+
+    if (actualParameters == NULL)
+    {
+        if (params.size() == 0)
+        {
+            return body->run(localArguments);
+        }
+        else
+        {
+            std::cerr << "Not enough parameters" << std::endl;
+            exit(-1);
+        }
+    }
+
+    actualParameters->run(arguments);
+
+    if (actualParameters->params.size() < params.size())
+    {
+        std::cerr << "Not enough parameters" << std::endl;
+        exit(-1);
+    }
+
+    for (size_t index = 0; index < params.size(); ++index)
+    {
+        if (isVar[index] && !(actualParameters->isIdent[index]))
+        {
+            std::cerr << "An argument " << params[index] << " should be a variable" << std::endl;
+            exit(-1);
+        }
+
+        /*
+        std::cerr << "set an argument " << params[index] << " with ";
+        actualParameters->params[index].print();
+        std::cerr << std::endl; 
+        */
+
+        (*localArguments)[params[index]] = actualParameters->params[index];
+    }
+
+    body->run(localArguments);
+    /*
+    std::cerr << "Params are";
+    for (size_t index = 0; index < params.size(); ++index)
+    {
+        std::cerr << " " << actualParameters->identName[index];//params[index];
+    }
+    std::cerr << std::endl;
+    */
+    for (size_t index = 0; index < params.size(); ++index)
+    {
+        //std::cerr << "return " << actualParameters->identName[index] << std::endl;
+        if (isVar[index])
+        {
+            (*arguments)[actualParameters->identName[index]] = (*localArguments)[params[index]];
+        }
+    }
+
+    return DataType();
+}
+
+
+/** ProcedureList **/
+
+ProcedureList::ProcedureList(Procedure* procedure, ProcedureList* procedureList)
+ : procedure(procedure), procedureList(procedureList) {}
+
+void ProcedureList::print()
+{
+    if (procedureList != NULL)
+    {
+        procedureList->print();
+        std::cout << " ; ";
+    }
+    procedure->print();
+}
+
+DataType ProcedureList::run(ArgumentList* arguments)
+{
     return DataType();
 }

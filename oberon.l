@@ -31,6 +31,7 @@ NUMBER {FLOAT}|{INTEGER}
 "END" {return _END;}
 
 "MODULE" {return _MODULE;}
+"PROCEDURE" {return _PROCEDURE;}
 "CONST" {return _CONST;}
 "TYPE" {return _TYPE;}
 "VAR" {return _VAR;}

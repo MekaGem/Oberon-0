@@ -38,6 +38,14 @@ class WhileStatement;
 class IdentList;
 class ConstDeclarations;
 class Declarations;
+class FPSection;
+class FormalParameters;
+class ProcedureHead;
+class ProcedureBody;
+class Procedure;
+class ProcedureList;
+
+extern std::map<std::string, Procedure*> procedures;
 
 class Number : public Node
 {
@@ -118,23 +126,26 @@ public:
     int type;
     Term* term;
     SimpleExpression* simpleExpr;
-    static const int SIMPLE_EXPRESSION_LPLUS = 1;
-    static const int SIMPLE_EXPRESSION_LMINUS = 2;
-    static const int SIMPLE_EXPRESSION_PLUS = 3;
-    static const int SIMPLE_EXPRESSION_MINUS = 4;
-    static const int SIMPLE_EXPRESSION_OR = 5;
+    static const int SIMPLE_EXPRESSION_TERM = 1;
+    static const int SIMPLE_EXPRESSION_LPLUS = 2;
+    static const int SIMPLE_EXPRESSION_LMINUS = 3;
+    static const int SIMPLE_EXPRESSION_PLUS = 4;
+    static const int SIMPLE_EXPRESSION_MINUS = 5;
+    static const int SIMPLE_EXPRESSION_OR = 6;
 };
 
 class Expression : public Node
 {
 public:
     Expression(int type, SimpleExpression* expr1, SimpleExpression* expr2 = NULL);
+    Expression(Ident* ident);
     virtual void print();
     virtual DataType run(ArgumentList* arguments = NULL);
 
     int type;
     SimpleExpression* expr1;
     SimpleExpression* expr2;
+    Ident* ident; // does not work
     static const int EXPRESSION_SIMPLE = 1;
     static const int EXPRESSION_EQ = 2;
     static const int EXPRESSION_NOTEQ = 3;
@@ -142,6 +153,7 @@ public:
     static const int EXPRESSION_LSEQ = 5;
     static const int EXPRESSION_GR = 6;
     static const int EXPRESSION_GREQ = 7;
+    static const int EXPRESSION_IDENT = 8; // does not work
 };
 
 class Assignment : public Node
@@ -161,6 +173,7 @@ class Statement : public Node
 public:
     Statement();
     static Statement* newAssignmentStatement(Assignment* assignment);
+    static Statement* newProcedureCallStatement(ProcedureCall* procedureCall);
     static Statement* newIFStatement(IFStatement* ifstatement);
     static Statement* newWhileStatement(WhileStatement* whileStatement);
     static Statement* newWriteStatement(Expression* expression);
@@ -178,6 +191,7 @@ public:
 
         Expression* writeExpression;
         Factor* readFactor;
+        ProcedureCall* procedureCall;
     } statement;
     static const int STATEMENT_ASSIGN = 1;
     static const int STATEMENT_CALL = 2;
@@ -209,6 +223,8 @@ public:
     Expression* expression;
     ActualParameters* actualParameters;
     std::vector<DataType> params;
+    std::vector<std::string> identName;
+    std::vector<bool> isIdent;
 };
 
 class ProcedureCall : public Node
@@ -324,4 +340,91 @@ public:
 
     std::vector<std::string> name;
     std::vector<DataType> initValue;
+};
+
+class FPSection : public Node
+{
+public:
+    FPSection(bool IsVar, IdentList* identList, Type* type, FPSection* section = NULL);
+    virtual void print();
+    virtual DataType run(ArgumentList* arguments = NULL);
+
+    bool IsVar;
+    IdentList* identList;
+    Type* type;
+    FPSection* section;
+
+    std::vector<std::string> params;
+    std::vector<Type*> types;
+    std::vector<bool> isVar;
+};
+
+class FormalParameters : public Node
+{
+public:
+    FormalParameters(FPSection* section = NULL);
+    virtual void print();
+    virtual DataType run(ArgumentList* arguments = NULL);
+
+    FPSection* section;
+
+    std::vector<std::string> params;
+    std::vector<Type*> types;
+    std::vector<bool> isVar;
+};
+
+class ProcedureHead : public Node
+{
+public:
+    ProcedureHead(Ident* name, FormalParameters* formalParams = NULL);
+    virtual void print();
+    virtual DataType run(ArgumentList* arguments = NULL);
+
+    Ident* name;
+    FormalParameters* formalParams;
+
+    std::vector<std::string> params;
+    std::vector<Type*> types;
+    std::vector<bool> isVar;
+};
+
+class ProcedureBody : public Node
+{
+public:
+    ProcedureBody(Declarations* dec, StatementSequence* statementSequence = NULL);
+    virtual void print();
+    virtual DataType run(ArgumentList* arguments = NULL);
+
+    Declarations* dec;
+    StatementSequence* statementSequence;
+};
+
+class Procedure : public Node
+{
+public:
+    Procedure(ProcedureHead* head, ProcedureBody* body, Ident* name);
+    virtual void print();
+    virtual DataType run(ArgumentList* arguments = NULL);
+    DataType call(ArgumentList* arguments, ActualParameters* actualParameters);
+
+    ProcedureHead* head;
+    ProcedureBody* body;
+    Ident* name;
+
+    Declarations* dec; // declarations from body
+
+    std::vector<std::string> params;
+    std::vector<Type*> types;
+    std::vector<bool> isVar;
+};
+
+class ProcedureList : public Node
+{
+public:
+    ProcedureList(Procedure* procedure, ProcedureList* procedureList = NULL);
+    virtual void print();
+    virtual DataType run(ArgumentList* arguments = NULL);
+
+    Procedure* procedure;
+    ProcedureList* procedureList;
 };

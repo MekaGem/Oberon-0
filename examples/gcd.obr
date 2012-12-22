@@ -1,0 +1,20 @@
+MODULE Main;
+	VAR a, b, c : INTEGER;
+BEGIN
+	
+	Write("Enter two integer numbers:");
+	Read(a);
+	Read(b);
+
+	WHILE a # 0
+	DO
+		b := b MOD a;
+		c := a;
+		a := b;
+		b := c
+	END;
+
+	Write("GCD of these two numbers is:");
+	Write(b);
+	WriteLn
+END

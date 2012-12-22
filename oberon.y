@@ -31,6 +31,14 @@
     Type* type_node;
     VarDeclarations* var_declarations_node;
     Declarations* declarations_node;
+
+    ProcedureList* procedure_list_node;
+    Procedure* procedure_node;
+    ProcedureBody* procedure_body_node;
+    ProcedureHead* procedure_head_node;
+    FormalParameters* formal_parameters_node;
+    FPSection* fpsection_node;
+    ProcedureCall* procedure_call_node;
 };
 
 %token <number_node> NUMBER
@@ -44,13 +52,14 @@
 
 %token _IF
 %token _THEN
-%token _ELSEIF
 %token _ELSE
+%token _ELSEIF
 %token _BEGIN
 %token _WHILE
 %token _DO
 %token _END
 %token _MODULE
+%token _PROCEDURE
 %token _CONST
 %token _TYPE
 %token _VAR
@@ -69,22 +78,33 @@
 %left ','
 %left '+'
 %left '-'
-%left '*'
-%left DIV
-%left '&'
-%left OR
-%left '~'
-%left MOD
-%left ';'
+
 %left '<'
 %left '>'
 %left LSEQ
 %left GREQ
 %left '#'
 %left '='
+
+%left '*'
+%left DIV
+%left MOD
+%left '&'
+%left OR
+
+%left '~'
+%left ';'
 %left ASSIGN
 
 %type <node> MODULE
+
+%type <procedure_list_node> PROCEDURE_LIST
+%type <procedure_node> PROCEDURE
+%type <procedure_body_node> PROCEDURE_BODY
+%type <procedure_head_node> PROCEDURE_HEAD
+%type <formal_parameters_node> FORMAL_PARAMETERS
+%type <fpsection_node> FPSECTION
+%type <procedure_call_node> PROCEDURE_CALL
 
 %type <declarations_node> DECLARATIONS
 %type <ident_list_node> IDENT_LIST
@@ -113,6 +133,41 @@ MODULE:
     {ArgumentList *list = new ArgumentList; $4->run(list); $6->run(list); $$ = NULL;}
     | _MODULE IDENT ';' DECLARATIONS _END 
     {ArgumentList *list = new ArgumentList; $4->run(list); $$ = NULL;}
+    | _MODULE IDENT ';' DECLARATIONS PROCEDURE_LIST _BEGIN STATEMENT_SEQUENCE _END 
+    {ArgumentList *list = new ArgumentList; $4->run(list); $7->run(list); $$ = NULL;}
+    | _MODULE IDENT ';' DECLARATIONS PROCEDURE_LIST _END 
+    {ArgumentList *list = new ArgumentList; $4->run(list); $$ = NULL;}
+    ;
+
+PROCEDURE_LIST:
+    PROCEDURE ';' {$$ = new ProcedureList($1);}
+    | PROCEDURE_LIST PROCEDURE ';' {$$ = new ProcedureList($2, $1);}
+    ;
+
+PROCEDURE:
+    PROCEDURE_HEAD ';' PROCEDURE_BODY IDENT {$$ = new Procedure($1, $3, $4);}
+    ;
+
+PROCEDURE_HEAD:
+    _PROCEDURE IDENT {$$ = new ProcedureHead($2);}
+    | _PROCEDURE IDENT FORMAL_PARAMETERS {$$ = new ProcedureHead($2, $3);}
+    ;
+
+FORMAL_PARAMETERS:
+    '(' ')' {$$ = new FormalParameters();}
+    | '(' FPSECTION ')' {$$ = new FormalParameters($2);}
+    ;
+
+FPSECTION:
+    _VAR IDENT_LIST ':' TYPE {$$ = new FPSection(true, $2, $4);}
+    | IDENT_LIST ':' TYPE {$$ = new FPSection(false, $1, $3);}
+    | FPSECTION ';' _VAR IDENT_LIST ':' TYPE {$$ = new FPSection(true, $4, $6, $1);}
+    | FPSECTION ';' IDENT_LIST ':' TYPE {$$ = new FPSection(false, $3, $5, $1);}
+    ;
+
+PROCEDURE_BODY:
+    DECLARATIONS _END {$$ = new ProcedureBody($1);}
+    | DECLARATIONS _BEGIN STATEMENT_SEQUENCE _END {$$ = new ProcedureBody($1, $3);}
     ;
 
 DECLARATIONS: 
@@ -160,6 +215,12 @@ STATEMENT:
     | _WRITE '(' EXPRESSION ')' {$$ = Statement::newWriteStatement($3);}
     | _WRITELN {$$ = Statement::newWriteLnStatement();}
     | _READ '(' FACTOR ')' {$$ = Statement::newReadStatement($3);}
+    | PROCEDURE_CALL {$$ = Statement::newProcedureCallStatement($1);}
+    ;
+
+PROCEDURE_CALL:
+    IDENT '(' ')' {$$ = new ProcedureCall($1);}
+    | IDENT '(' ACTUAL_PARAMETERS ')' {$$ = new ProcedureCall($1, $3);}
     ;
 
 WHILE_STATEMENT:
@@ -196,7 +257,7 @@ EXPRESSION:
     ;
 
 SIMPLE_EXPRESSION:
-    TERM {$$ = new SimpleExpression(SimpleExpression::SIMPLE_EXPRESSION_LPLUS, $1);}
+    TERM {$$ = new SimpleExpression(SimpleExpression::SIMPLE_EXPRESSION_TERM, $1);}
     | '+' TERM {$$ = new SimpleExpression(SimpleExpression::SIMPLE_EXPRESSION_LPLUS, $2);}
     | '-' TERM {$$ = new SimpleExpression(SimpleExpression::SIMPLE_EXPRESSION_LMINUS, $2);}
     | SIMPLE_EXPRESSION '+' TERM {$$ = new SimpleExpression(SimpleExpression::SIMPLE_EXPRESSION_PLUS, $3, $1);}
