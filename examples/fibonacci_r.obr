@@ -1,8 +1,7 @@
 MODULE Main;
 	VAR n, ans : INTEGER;
-	arr : ARRAY 100 OF INTEGER;
 
-	PROCEDURE Fibonacci (n : INTEGER; VAR ans : INTEGER; arr : ARRAY 100 OF INTEGER);
+	PROCEDURE Fibonacci (n : INTEGER; VAR ans : INTEGER);
 		VAR ans1, ans2 : INTEGER;
 	BEGIN
 		IF (n = 1) OR (n = 2) THEN
@@ -10,17 +9,15 @@ MODULE Main;
 		ELSEIF (n = 2) THEN
 			ans := 1
 		ELSE
-			Fibonacci(n - 1, ans1, arr);
-			ans2 := arr[n - 2];
+			Fibonacci(n - 1, ans1);
+			Fibonacci(n - 2, ans2);
 			ans := ans1 + ans2
-		END;
-		arr[n] := ans
+		END
 	END Fibonacci;
 
 BEGIN
-	Read(n);
-	Fibonacci(n, ans, arr);
+	n := 31;
+	Fibonacci(n, ans);
 	Write(ans);
-	Write(arr[n]);
 	WriteLn
 END

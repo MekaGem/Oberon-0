@@ -1,5 +1,6 @@
 MODULE Main;
-	VAR a : ARRAY 1000 OF INTEGER;
+	CONST size = 1000;
+	VAR a : ARRAY size OF INTEGER;
 	i, n : INTEGER;
 BEGIN
 	

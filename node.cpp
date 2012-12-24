@@ -1191,12 +1191,24 @@ DataType Declarations::run(ArgumentList* arguments)
 #endif
     if (constDec != NULL)
     {
+        // std::cerr << "constDec" << std::endl;
         constDec->run(arguments);
+
+        for (size_t index = 0; index < constDec->name.size(); ++index)
+        {
+            (*arguments)[constDec->name[index]] = constDec->constValue[index];
+        }
     }
 
     if (varDec != NULL)
     {
+        // std::cerr << "varDec" << std::endl;
         varDec->run(arguments);
+
+        for (size_t index = 0; index < varDec->name.size(); ++index)
+        {
+            (*arguments)[varDec->name[index]] = varDec->initValue[index];
+        }
     }
 
     if (arguments == NULL)
@@ -1236,11 +1248,6 @@ DataType Declarations::run(ArgumentList* arguments)
                 exit(-1);
             }
         }
-    }
-
-    for (size_t index = 0; index < name.size(); ++index)
-    {
-        (*arguments)[name[index]] = value[index];
     }
 
     return DataType();
